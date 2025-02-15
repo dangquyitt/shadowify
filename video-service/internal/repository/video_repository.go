@@ -1,6 +1,16 @@
-package main
+package repository
 
-var videos []Video = []Video{
+import (
+	"context"
+
+	"github.com/dangquyitt/shadowify/video-service/internal/model"
+)
+
+type VideoRepository interface {
+	FindAll(ctx context.Context) ([]model.Video, error)
+}
+
+var videos []model.Video = []model.Video{
 	{Id: "1", Title: "Video 1", Thumbnail: "thumbnail 1", Source: "source 1", ExternalId: "externalId 1"},
 	{Id: "2", Title: "Video 2", Thumbnail: "thumbnail 2", Source: "source 2", ExternalId: "externalId 2"},
 	{Id: "3", Title: "Video 3", Thumbnail: "thumbnail 3", Source: "source 3", ExternalId: "externalId 3"},
@@ -19,6 +29,6 @@ func NewVideoRepository() *videoRepository {
 	return &videoRepository{}
 }
 
-func (r *videoRepository) FindAll() ([]Video, error) {
+func (r *videoRepository) FindAll(ctx context.Context) ([]model.Video, error) {
 	return videos, nil
 }
