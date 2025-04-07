@@ -23,3 +23,4 @@ go.work.sum
 
 # env file
 configs/config.dev.yml
+configs/config.prod.yml
