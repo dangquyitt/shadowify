@@ -11,4 +11,6 @@ type Logger interface {
 	Warnf(ctx context.Context, format string, v ...any)
 	Error(ctx context.Context, v any)
 	Errorf(ctx context.Context, format string, v ...any)
+	Fatal(ctx context.Context, v any)
+	Fatalf(ctx context.Context, format string, v ...any)
 }

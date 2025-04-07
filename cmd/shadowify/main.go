@@ -2,30 +2,54 @@ package main
 
 import (
 	"context"
+	"fmt"
+	stdlog "log"
 	"net/http"
 	"os"
 	"os/signal"
+	"shadowify/internal/video/service"
 	"shadowify/pkg/config"
 	"shadowify/pkg/logger"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
+	"google.golang.org/api/option"
+	"google.golang.org/api/youtube/v3"
 )
 
 func main() {
-	cfg, err := config.LoadConfig("configs/config.yml")
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "dev"
 	}
-	_ = logger.NewZerologAdapter(cfg.Logger)
+
+	ctx := context.Background()
+	cfg, err := config.LoadConfig(fmt.Sprintf("configs/config.%s.yml", env))
+	if err != nil {
+		stdlog.Fatalf("Failed to load config: %v", err)
+	}
+
+	log := logger.NewZerologAdapter(cfg.Logger)
+	log.Infof(context.Background(), "App started in %s mode", env)
+
+	ytService, err := youtube.NewService(ctx, option.WithAPIKey(cfg.Youtube.APIKey))
+	if err != nil {
+		log.Fatalf(context.Background(), "Failed to create youtube service: %v", err)
+	}
+	videoService := service.NewVideoService(ytService)
 
 	// Setup
 	e := echo.New()
-	e.Logger.SetLevel(log.INFO)
 	e.GET("/", func(c echo.Context) error {
 		time.Sleep(5 * time.Second)
 		return c.JSON(http.StatusOK, "OK")
+	})
+	e.GET("/videos", func(c echo.Context) error {
+		videos, err := videoService.GetVideos()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		return c.JSON(http.StatusOK, videos)
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

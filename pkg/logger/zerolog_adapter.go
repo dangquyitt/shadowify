@@ -25,7 +25,7 @@ func NewZerologAdapter(cfg config.LoggerConfig) *zerologAdapter {
 		level = zerolog.InfoLevel
 	}
 
-	l := zerolog.New(os.Stdout).Level(level)
+	l := zerolog.New(os.Stdout).Level(level).With().CallerWithSkipFrameCount(3).Logger()
 
 	return &zerologAdapter{l: &l}
 }
@@ -60,4 +60,12 @@ func (l *zerologAdapter) Error(ctx context.Context, v any) {
 
 func (l *zerologAdapter) Errorf(ctx context.Context, format string, v ...any) {
 	l.l.Error().Ctx(ctx).Msgf(format, v...)
+}
+
+func (l *zerologAdapter) Fatal(ctx context.Context, v any) {
+	l.l.Fatal().Ctx(ctx).Msgf("%v", v)
+}
+
+func (l *zerologAdapter) Fatalf(ctx context.Context, format string, v ...any) {
+	l.l.Fatal().Ctx(ctx).Msgf(format, v...)
 }

@@ -5,10 +5,11 @@ import (
 )
 
 type Error struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Params  map[string]any
-	Cause   error `json:"-"`
+	Code    string         `json:"code"`
+	Message string         `json:"message"`
+	Params  map[string]any `json:"params"`
+	Field   string         `json:"field"`
+	cause   error          `json:"-"`
 }
 
 func NewError(code string, message ...string) *Error {
@@ -34,17 +35,17 @@ func (e *Error) WithCause(err error) *Error {
 		Code:    e.Code,
 		Message: e.Message,
 		Params:  e.Params,
-		Cause:   err,
+		cause:   err,
 	}
 }
 
 func (e *Error) Error() string {
-	if e.Cause == nil {
+	if e.cause == nil {
 		return fmt.Sprintf("code=%s, message=%v", e.Code, e.Message)
 	}
-	return fmt.Sprintf("code=%s, message=%v, internal=%v", e.Code, e.Message, e.Cause)
+	return fmt.Sprintf("code=%s, message=%v, internal=%v", e.Code, e.Message, e.cause)
 }
 
 func (e *Error) Unwrap() error {
-	return e.Cause
+	return e.cause
 }

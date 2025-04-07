@@ -1,0 +1,8 @@
+app:
+  name: "shadowify"
+  version: "1.0.0"
+  environment: "prod"
+logger:
+  level: info
+youtube:
+  apiKey: <your_youtube_api_key>

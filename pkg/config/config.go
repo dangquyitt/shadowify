@@ -6,7 +6,9 @@ type Config struct {
 	App      AppConfig
 	HTTP     HTTPConfig
 	Database DatabaseConfig
+	I18n     I18nConfig
 	Logger   LoggerConfig
+	Youtube  YoutubeConfig
 }
 
 type AppConfig struct {
@@ -18,8 +20,16 @@ type HTTPConfig struct {
 type DatabaseConfig struct {
 }
 
+type I18nConfig struct {
+	BundleDir string
+}
+
 type LoggerConfig struct {
 	Level string
+}
+
+type YoutubeConfig struct {
+	APIKey string
 }
 
 func LoadConfig(path string) (*Config, error) {
