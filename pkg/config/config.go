@@ -3,12 +3,12 @@ package config
 import "github.com/spf13/viper"
 
 type Config struct {
-	App      AppConfig
-	HTTP     HTTPConfig
-	Database DatabaseConfig
-	I18n     I18nConfig
-	Logger   LoggerConfig
-	Youtube  YoutubeConfig
+	App      AppConfig      `mapstructure:"app"`
+	HTTP     HTTPConfig     `mapstructure:"http"`
+	Database DatabaseConfig `mapstructure:"database"`
+	I18n     I18nConfig     `mapstructure:"i18n"`
+	Logger   LoggerConfig   `mapstructure:"logger"`
+	Youtube  YoutubeConfig  `mapstructure:"youtube"`
 }
 
 type AppConfig struct {
@@ -18,6 +18,12 @@ type HTTPConfig struct {
 }
 
 type DatabaseConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	DBName   string `mapstructure:"dbname"`
+	SSLMode  string `mapstructure:"sslmode"`
 }
 
 type I18nConfig struct {

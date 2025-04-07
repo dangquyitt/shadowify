@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"shadowify/internal/video/service"
 	"shadowify/pkg/config"
+	"shadowify/pkg/database"
 	"shadowify/pkg/logger"
 	"time"
 
@@ -18,17 +19,26 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
+	// Load environment variables
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "dev"
 	}
 
-	ctx := context.Background()
+	// Load config
 	cfg, err := config.LoadConfig(fmt.Sprintf("configs/config.%s.yml", env))
 	if err != nil {
 		stdlog.Fatalf("Failed to load config: %v", err)
 	}
 
+	_, err = database.NewDatabase(&cfg.Database)
+	if err != nil {
+		stdlog.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// Setup logger
 	log := logger.NewZerologAdapter(cfg.Logger)
 	log.Infof(context.Background(), "App started in %s mode", env)
 

@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shadowify
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer:5
+    container_name: adminer
+    restart: unless-stopped
+    ports:
+      - 8081:8080
+    volumes:
+      - adminer-data:/var/lib/adminer
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+  adminer-data:
+
+networks:
+  app-network:
+    driver: bridge
