@@ -3,14 +3,15 @@ package logger
 import "context"
 
 type Logger interface {
-	Debug(ctx context.Context, v any)
-	Debugf(ctx context.Context, format string, v ...any)
-	Info(ctx context.Context, v any)
-	Infof(ctx context.Context, format string, v ...any)
-	Warn(ctx context.Context, v any)
-	Warnf(ctx context.Context, format string, v ...any)
-	Error(ctx context.Context, v any)
-	Errorf(ctx context.Context, format string, v ...any)
-	Fatal(ctx context.Context, v any)
-	Fatalf(ctx context.Context, format string, v ...any)
+	Debug(msg string)
+	Debugf(format string, v ...any)
+	Info(msg string)
+	Infof(format string, v ...any)
+	Warn(msg string)
+	Warnf(format string, v ...any)
+	Error(msg string)
+	Errorf(format string, v ...any)
+	Fatal(msg string)
+	Fatalf(format string, v ...any)
+	WithContext(ctx context.Context) Logger
 }

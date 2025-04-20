@@ -33,18 +33,18 @@ func main() {
 		stdlog.Fatalf("Failed to load config: %v", err)
 	}
 
+	// Setup logger
+	logger.SetDefaultLogger(logger.NewZerologAdapter(cfg.Logger))
+	logger.Infof("App started in %s mode", env)
+
 	_, err = database.NewDatabase(&cfg.Database)
 	if err != nil {
 		stdlog.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Setup logger
-	log := logger.NewZerologAdapter(cfg.Logger)
-	log.Infof(context.Background(), "App started in %s mode", env)
-
 	ytService, err := youtube.NewService(ctx, option.WithAPIKey(cfg.Youtube.APIKey))
 	if err != nil {
-		log.Fatalf(context.Background(), "Failed to create youtube service: %v", err)
+		logger.Fatalf("Failed to create youtube service: %v", err)
 	}
 	videoService := service.NewVideoService(ytService)
 

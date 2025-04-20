@@ -14,6 +14,7 @@ require (
 require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jmoiron/sqlx v1.4.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

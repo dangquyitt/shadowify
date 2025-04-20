@@ -2,70 +2,111 @@ package logger
 
 import (
 	"context"
+	"io"
 	"os"
+	"path/filepath"
 	"shadowify/pkg/config"
+	"strings"
 
 	"github.com/rs/zerolog"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var zerologLevelMap = map[string]zerolog.Level{
+var mapZerologLevel = map[string]zerolog.Level{
 	"debug": zerolog.DebugLevel,
 	"info":  zerolog.InfoLevel,
 	"warn":  zerolog.WarnLevel,
 	"error": zerolog.ErrorLevel,
+	"fatal": zerolog.FatalLevel,
 }
 
 type zerologAdapter struct {
-	l *zerolog.Logger
+	log *zerolog.Logger
+	ctx context.Context
 }
 
-func NewZerologAdapter(cfg config.LoggerConfig) *zerologAdapter {
-	level, ok := zerologLevelMap[cfg.Level]
-	if !ok {
-		level = zerolog.InfoLevel
+func NewZerologAdapter(cfg config.LoggerConfig) Logger {
+	var writers []io.Writer
+
+	// if file is enabled, add file writer
+	if cfg.File.Enabled {
+		_ = os.MkdirAll(filepath.Dir(cfg.File.Path), 0755)
+		fileWriter := &lumberjack.Logger{
+			Filename:   cfg.File.Path,
+			MaxSize:    cfg.File.MaxSize,
+			MaxBackups: cfg.File.MaxBackups,
+			MaxAge:     cfg.File.MaxAge,
+			Compress:   cfg.File.Compress,
+		}
+		level, ok := mapZerologLevel[strings.ToLower(cfg.File.Level)]
+		if !ok {
+			level = zerolog.InfoLevel
+		}
+		filteredFileWriter := &zerolog.FilteredLevelWriter{
+			Writer: zerolog.LevelWriterAdapter{Writer: fileWriter},
+			Level:  level,
+		}
+		writers = append(writers, filteredFileWriter)
 	}
 
-	l := zerolog.New(os.Stdout).Level(level).With().CallerWithSkipFrameCount(3).Logger()
+	// if console is enabled or there is no file writer, add console writer
+	if cfg.Console.Enabled || len(writers) == 0 {
+		level, ok := mapZerologLevel[strings.ToLower(cfg.Console.Level)]
+		if !ok {
+			level = zerolog.InfoLevel
+		}
+		filteredConsoleWriter := &zerolog.FilteredLevelWriter{
+			Writer: zerolog.LevelWriterAdapter{Writer: os.Stdout},
+			Level:  level,
+		}
+		writers = append(writers, filteredConsoleWriter)
+	}
 
-	return &zerologAdapter{l: &l}
+	log := zerolog.New(zerolog.MultiLevelWriter(writers...)).With().Timestamp().CallerWithSkipFrameCount(4).Logger()
+
+	return &zerologAdapter{log: &log}
 }
 
-func (l *zerologAdapter) Debug(ctx context.Context, v any) {
-	l.l.Debug().Ctx(ctx).Msgf("%v", v)
+func (l *zerologAdapter) Debug(msg string) {
+	l.log.Debug().Ctx(l.ctx).Msg(msg)
 }
 
-func (l *zerologAdapter) Debugf(ctx context.Context, format string, v ...any) {
-	l.l.Debug().Ctx(ctx).Msgf(format, v...)
+func (l *zerologAdapter) Debugf(format string, v ...any) {
+	l.log.Debug().Ctx(l.ctx).Msgf(format, v...)
 }
 
-func (l *zerologAdapter) Info(ctx context.Context, v any) {
-	l.l.Info().Ctx(ctx).Msgf("%v", v)
+func (l *zerologAdapter) Info(msg string) {
+	l.log.Info().Ctx(l.ctx).Msg(msg)
 }
 
-func (l *zerologAdapter) Infof(ctx context.Context, format string, v ...any) {
-	l.l.Info().Ctx(ctx).Msgf(format, v...)
+func (l *zerologAdapter) Infof(format string, v ...any) {
+	l.log.Info().Ctx(l.ctx).Msgf(format, v...)
 }
 
-func (l *zerologAdapter) Warn(ctx context.Context, v any) {
-	l.l.Warn().Ctx(ctx).Msgf("%v", v)
+func (l *zerologAdapter) Warn(msg string) {
+	l.log.Warn().Ctx(l.ctx).Msg(msg)
 }
 
-func (l *zerologAdapter) Warnf(ctx context.Context, format string, v ...any) {
-	l.l.Warn().Ctx(ctx).Msgf(format, v...)
+func (l *zerologAdapter) Warnf(format string, v ...any) {
+	l.log.Warn().Ctx(l.ctx).Msgf(format, v...)
 }
 
-func (l *zerologAdapter) Error(ctx context.Context, v any) {
-	l.l.Error().Ctx(ctx).Msgf("%v", v)
+func (l *zerologAdapter) Error(msg string) {
+	l.log.Error().Ctx(l.ctx).Msg(msg)
 }
 
-func (l *zerologAdapter) Errorf(ctx context.Context, format string, v ...any) {
-	l.l.Error().Ctx(ctx).Msgf(format, v...)
+func (l *zerologAdapter) Errorf(format string, v ...any) {
+	l.log.Error().Ctx(l.ctx).Msgf(format, v...)
 }
 
-func (l *zerologAdapter) Fatal(ctx context.Context, v any) {
-	l.l.Fatal().Ctx(ctx).Msgf("%v", v)
+func (l *zerologAdapter) Fatal(msg string) {
+	l.log.Fatal().Ctx(l.ctx).Msg(msg)
 }
 
-func (l *zerologAdapter) Fatalf(ctx context.Context, format string, v ...any) {
-	l.l.Fatal().Ctx(ctx).Msgf(format, v...)
+func (l *zerologAdapter) Fatalf(format string, v ...any) {
+	l.log.Fatal().Ctx(l.ctx).Msgf(format, v...)
+}
+
+func (l *zerologAdapter) WithContext(ctx context.Context) Logger {
+	return &zerologAdapter{log: l.log, ctx: ctx}
 }

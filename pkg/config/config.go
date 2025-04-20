@@ -31,9 +31,24 @@ type I18nConfig struct {
 }
 
 type LoggerConfig struct {
-	Level string
+	File    LoggerFileConfig    `mapstructure:"file"`
+	Console LoggerConsoleConfig `mapstructure:"console"`
 }
 
+type LoggerFileConfig struct {
+	Level      string `mapstructure:"level"`
+	Enabled    bool   `mapstructure:"enabled"`
+	Path       string `mapstructure:"path"`
+	MaxSize    int    `mapstructure:"maxSize"`
+	MaxBackups int    `mapstructure:"maxBackups"`
+	MaxAge     int    `mapstructure:"maxAge"`
+	Compress   bool   `mapstructure:"compress"`
+}
+
+type LoggerConsoleConfig struct {
+	Level   string `mapstructure:"level"`
+	Enabled bool   `mapstructure:"enabled"`
+}
 type YoutubeConfig struct {
 	APIKey string
 }

@@ -21,6 +21,9 @@
 go.work
 go.work.sum
 
-# env file
+# ENV file
 configs/config.dev.yml
 configs/config.prod.yml
+
+# Logs
+logs/

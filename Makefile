@@ -1,5 +1,5 @@
 .PHONY: shadowify
-shadowify:
+run:
 	go run cmd/shadowify/main.go
 
 compose-up:
