@@ -56,7 +56,7 @@ func NewZerologAdapter(cfg config.LoggerConfig) Logger {
 			level = zerolog.InfoLevel
 		}
 		filteredConsoleWriter := &zerolog.FilteredLevelWriter{
-			Writer: zerolog.LevelWriterAdapter{Writer: os.Stdout},
+			Writer: zerolog.LevelWriterAdapter{Writer: zerolog.ConsoleWriter{Out: os.Stdout}},
 			Level:  level,
 		}
 		writers = append(writers, filteredConsoleWriter)
