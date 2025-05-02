@@ -26,4 +26,4 @@ configs/config.dev.yml
 configs/config.prod.yml
 
 # Logs
-logs/
+log/

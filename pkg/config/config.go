@@ -6,7 +6,6 @@ type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	HTTP     HTTPConfig     `mapstructure:"http"`
 	Database DatabaseConfig `mapstructure:"database"`
-	I18n     I18nConfig     `mapstructure:"i18n"`
 	Logger   LoggerConfig   `mapstructure:"logger"`
 	Youtube  YoutubeConfig  `mapstructure:"youtube"`
 }
@@ -24,10 +23,6 @@ type DatabaseConfig struct {
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
 	SSLMode  string `mapstructure:"sslmode"`
-}
-
-type I18nConfig struct {
-	BundleDir string
 }
 
 type LoggerConfig struct {

@@ -1,4 +1,4 @@
-package domain
+package model
 
 // Video represents a video entity
 type Video struct {

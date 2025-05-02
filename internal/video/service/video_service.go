@@ -1,7 +1,7 @@
 package service
 
 import (
-	"shadowify/internal/video/domain"
+	"shadowify/internal/video/model"
 
 	"google.golang.org/api/youtube/v3"
 )
@@ -14,14 +14,14 @@ func NewVideoService(ytService *youtube.Service) *videoService {
 	return &videoService{ytService: ytService}
 }
 
-func (s *videoService) GetVideos() ([]domain.Video, error) {
-	var videos []domain.Video
+func (s *videoService) GetVideos() ([]model.Video, error) {
+	var videos []model.Video
 	ytVideos, err := s.ytService.Videos.List([]string{"id"}).Do()
 	if err != nil {
 		return nil, err
 	}
 	for _, item := range ytVideos.Items {
-		videos = append(videos, domain.Video{
+		videos = append(videos, model.Video{
 			ID:          item.Id,
 			Title:       item.Snippet.Title,
 			Description: item.Snippet.Description,
