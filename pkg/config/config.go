@@ -3,17 +3,31 @@ package config
 import "github.com/spf13/viper"
 
 type Config struct {
-	App      AppConfig      `mapstructure:"app"`
-	HTTP     HTTPConfig     `mapstructure:"http"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Logger   LoggerConfig   `mapstructure:"logger"`
-	Youtube  YoutubeConfig  `mapstructure:"youtube"`
+	App           AppConfig           `mapstructure:"app"`
+	HTTP          HTTPConfig          `mapstructure:"http"`
+	Database      DatabaseConfig      `mapstructure:"database"`
+	Logger        LoggerConfig        `mapstructure:"logger"`
+	Youtube       YoutubeConfig       `mapstructure:"youtube"`
+	Elasticsearch ElasticsearchConfig `mapstructure:"elasticsearch"`
 }
 
 type AppConfig struct {
 }
 
 type HTTPConfig struct {
+}
+
+type KeycloakConfig struct {
+	Realm        string `mapstructure:"realm"`
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	Host         string `mapstructure:"host"`
+	Username     string `mapstructure:"username"`
+	Password     string `mapstructure:"password"`
+}
+
+type ElasticsearchConfig struct {
+	URL string `mapstructure:"url"`
 }
 
 type DatabaseConfig struct {

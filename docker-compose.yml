@@ -7,30 +7,29 @@ services:
     container_name: shadowify
     restart: unless-stopped
     ports:
-      - 8080:8080
+      - 8000:8080
     env_file:
       - .env
     volumes:
       - ./configs:/configs
     depends_on:
-      - db
+      - postgres
     networks:
-      - app-network
+      - shadowify-network
 
-  db:
+  postgres:
     image: postgres:17-alpine
-    container_name: db
+    container_name: postgres
     restart: unless-stopped
     ports:
       - 5432:5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: shadowify
+    env_file:
+      - .env
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - app-network
+      - shadowify-network
 
   adminer:
     image: adminer:5
@@ -41,14 +40,41 @@ services:
     volumes:
       - adminer-data:/var/lib/adminer
     depends_on:
-      - db
+      - postgres
     networks:
-      - app-network
+      - shadowify-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.2
+    container_name: keycloak
+    restart: unless-stopped
+    ports:
+      - 8082:8080
+    env_file:
+      - .env
+    command: "start-dev"
+    depends_on:
+      - postgres
+    networks:
+      - shadowify-network
+
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    container_name: es
+    restart: unless-stopped
+    ports:
+      - 9200:9200
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - shadowify-network
+    mem_limit: 1GB
 
 volumes:
-  db-data:
+  es-data:
+  postgres-data:
   adminer-data:
 
 networks:
-  app-network:
+  shadowify-network:
     driver: bridge
