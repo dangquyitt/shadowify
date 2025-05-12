@@ -1,41 +1,37 @@
+from yt_dlp import YoutubeDL
 import os
-import yt_dlp
-from datetime import datetime
-
-URLS = ['https://www.youtube.com/watch?v=']
 
 
-def download_audio_from_youtube(video_code: str, output_dir: str = './downloads', format: str = 'mp3') -> str:
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+class AudioDownloader:
+    def __init__(self, output_dir="/tmp", format="wav"):
+        self.output_dir = output_dir
+        self.format = format
+        os.makedirs(self.output_dir, exist_ok=True)
 
-    url = f'https://www.youtube.com/watch?v={video_code}'
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"{video_code}_{timestamp}"
+        self.ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': os.path.join(self.output_dir, '%(id)s_%(upload_date)s.%(ext)s'),
+            'noplaylist': True,
+            'quiet': True,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': format,
+                'preferredquality': '192',
+            }],
+            'prefer_ffmpeg': True,
+        }
+        self.ydl = YoutubeDL(self.ydl_opts)
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': format,
-        }],
-        'outtmpl': os.path.join(output_dir, f'{filename}.%(ext)s'),
-        'noplaylist': True,
-        'quiet': True,
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        error_code = ydl.download(url)
-
-    if error_code == 0:
-        audio_file = os.path.join(output_dir, f'{filename}.{format}')
-        return audio_file
-    else:
-        raise Exception(f"Download failed for URL: {url}")
-
-
-# Ví dụ chạy thử
-if __name__ == '__main__':
-    video_code = '9QmEaAUSjm8'  # demo video của yt-dlp
-    path = download_audio_from_youtube(video_code)
-    print(f'✅ Audio saved at: {path}')
+    def download(self, video_code: str) -> str:
+        url = f'https://www.youtube.com/watch?v={video_code}'
+        try:
+            info = self.ydl.extract_info(url, download=True)
+            filename = os.path.splitext(self.ydl.prepare_filename(info))[
+                0] + f".{self.format}"
+            if os.path.exists(filename):
+                return filename
+            else:
+                raise FileNotFoundError(
+                    f"Downloaded file not found: {filename}")
+        except Exception as e:
+            raise RuntimeError(f"❌ Download failed for {url}: {e}")

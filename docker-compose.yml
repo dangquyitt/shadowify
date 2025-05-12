@@ -70,6 +70,32 @@ services:
       - shadowify-network
     mem_limit: 1GB
 
+  metadata:
+    build:
+      context: ./services/metadata-service
+      dockerfile: Dockerfile
+    image: dangquyitt/metadata:latest
+    container_name: metadata
+    restart: unless-stopped
+    ports:
+      - 50051:50051
+    networks:
+      - shadowify-network
+
+  transcriber:
+    build:
+      context: ./services/transcriber-service
+      dockerfile: Dockerfile
+    image: dangquyitt/transcriber:latest
+    container_name: transcriber
+    volumes:
+      - /tmp:/tmp
+    restart: unless-stopped
+    ports:
+      - 50052:50051
+    networks:
+      - shadowify-network
+
 volumes:
   es-data:
   postgres-data:

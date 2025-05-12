@@ -1,9 +1,18 @@
-.PHONY: shadowify
-run:
-	go run cmd/shadowify/main.go
+PROTO_DIR=proto
+GO_OUT=gen/go
+PY_OUT=gen/python
 
-compose-up:
-	docker-compose -f docker-compose.yml up -d
+.PHONY: all gen clean
 
-compose-down:
-	docker-compose -f docker-compose.yml down
+all: gen
+
+gen:
+	@echo "📦 Generating protobuf files..."
+	@mkdir -p $(GO_OUT)
+	@mkdir -p $(PY_OUT)
+	buf generate
+
+clean:
+	@echo "🧹 Cleaning generated files..."
+	@rm -rf $(GO_OUT)/*
+	@rm -rf $(PY_OUT)/*

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "shadowify/gen";
+
+package metadata;
+
+service MetadataService {
+  rpc GetMetadata (MetadataRequest) returns (MetadataResponse);
+}
+
+message MetadataRequest {
+  string youtube_id = 1;
+}
+
+message MetadataResponse {
+  string title = 1;
+  int64 duration = 2;
+  string duration_string = 3;
+  string thumbnail = 4;
+  int64 view_count = 5;
+  repeated string tags = 6;
+}
