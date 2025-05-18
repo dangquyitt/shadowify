@@ -1,0 +1,125 @@
+package service
+
+import (
+	"context"
+	"net/url"
+	"shadowify/internal/apperr"
+	tranmodel "shadowify/internal/transcript/model"
+	tranrepo "shadowify/internal/transcript/repository"
+	"shadowify/internal/video/dto"
+	"shadowify/internal/video/model"
+	"shadowify/internal/video/repository"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type VideoService struct {
+	repo        *repository.VideoRepository
+	extractor   *repository.ExtractorRepository
+	segmentRepo *tranrepo.SegmentRepository
+}
+
+func NewVideoService(repo *repository.VideoRepository, segmentRepo *tranrepo.SegmentRepository, extractor *repository.ExtractorRepository) *VideoService {
+	return &VideoService{
+		repo:        repo,
+		segmentRepo: segmentRepo,
+		extractor:   extractor,
+	}
+}
+
+func (s *VideoService) getYoutubeIdFromRawInput(rawInput string) (string, error) {
+	if len(rawInput) == 0 {
+		return "", apperr.NewAppErr("bad_request", "youtube id is required")
+	}
+
+	if strings.Contains(rawInput, "youtube.com/watch?v=") {
+		url, err := url.Parse(rawInput)
+		if err != nil {
+			return "", apperr.NewAppErr("bad_request", "invalid youtube url").WithCause(err)
+		}
+		queryParams := url.Query()
+		return queryParams.Get("v"), nil
+	}
+
+	if strings.HasPrefix(rawInput, "https://youtu.be/") {
+		url, err := url.Parse(rawInput)
+		if err != nil {
+			return "", apperr.NewAppErr("bad_request", "invalid youtube url").WithCause(err)
+		}
+		return strings.TrimPrefix(url.Path, "/"), nil
+	}
+
+	return strings.TrimSpace(rawInput), nil
+}
+
+func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) (*model.Video, error) {
+	youtubeId, err := s.getYoutubeIdFromRawInput(req.YoutubeRawInput)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := s.extractor.ExtractMetadata(ctx, youtubeId)
+	if err != nil {
+		return nil, err
+	}
+
+	video := &model.Video{
+		Id:             uuid.NewString(),
+		Title:          metadata.Title,
+		FullTitle:      metadata.FullTitle,
+		Description:    metadata.Description,
+		YoutubeId:      metadata.Id,
+		Duration:       metadata.Duration,
+		DurationString: metadata.DurationString,
+		Thumbnail:      metadata.Thumbnail,
+		Tags:           metadata.Tags,
+		Categories:     metadata.Categories,
+		CreatedAt:      time.Now().UTC(),
+		UpdatedAt:      time.Now().UTC(),
+	}
+
+	err = s.repo.Create(ctx, video)
+	if err != nil {
+		return nil, err
+	}
+
+	transcript, err := s.extractor.ExtractTranscript(ctx, youtubeId)
+	if err != nil {
+		return nil, err
+	}
+
+	segments := make([]*tranmodel.Segment, len(transcript.Segments))
+	for i, segment := range transcript.Segments {
+		segments[i] = &tranmodel.Segment{
+			VideoId:  video.Id,
+			StartSec: segment.Start,
+			EndSec:   segment.End,
+			Content:  segment.Text,
+		}
+	}
+
+	err = s.segmentRepo.Create(ctx, segments)
+	if err != nil {
+		return nil, err
+	}
+
+	return video, nil
+}
+
+func (s *VideoService) GetById(ctx context.Context, id string) (*model.Video, error) {
+	video, err := s.repo.GetById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return video, nil
+}
+
+func (s *VideoService) List(ctx context.Context) ([]*model.Video, error) {
+	videos, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return videos, nil
+}

@@ -1,0 +1,58 @@
+## Project Overview
+
+The project is a english app to help user leaning english follow by shadowing method. Beside shadowing, it also provide some features to help user improve their english such as flashcard, vocabulary, grammar, etc.
+
+# Core System Components
+
+- The main application logic is in internal.
+- The migrations are in migrations.
+
+# Backend Code Structure
+
+- If the package is a domain please organize it follow by repository, service, model, delivery/http, delivery/grpc(for grpc server implement), dto for request and response.
+- The grpc client is in repository.
+- The high level not depend on the low level. It just depend on interface.
+- Migrations are in migrations folder.
+- Apply DRY, SOLID, KISS principles.
+- The function if have error please return error and don't wrap it with apperr and before response to client please detect if error is apperr.AppErr response with apperr.AppErr. If not, response with apperr.UnexpectedError. Just keep 400, 401, 403, 200 status code.
+- Using proto for internal service communication.
+- proto/gen for golang grpc generated code.
+- The repository, service need wrap error with apperr. Handle convert error to apperr in repository, service. If error is not apperr, convert it to apperr.UnexpectedError.
+
+# Style
+
+- Always use ctx context.Context for first parameter of function.
+- Using camelCase for variable and private function.
+- Using snake_case for database table and column.
+- Using camelCase for api endpoint, request and response.
+- Keep source code clean and readable.
+- Alway wrap response with response.Response. Follow by /internal/response/response.go.
+- Using lowercase for package name.
+- ID named as Id. Just using string not uuid.
+
+# Data & Storage
+
+- Using postgresql as database.
+- Using sqlx as database driver.
+- Using goose for database migration.
+
+# Tech Stack
+
+- Go 1.24.
+- Echo for web framework.
+- Zerolog for logging.
+- Viper for configuration.
+- SQLx for database.
+- Goose for database migration.
+- Wire for dependency injection.
+- Keycloak for authentication.
+- Elasticsearch for search.
+- Golang playground/validator v10 for validation.
+- jinzhu/copier for deep copy.
+- GRPC for internal service communication.
+- Faster Whisper for speech to text.
+- yt-dlp for youtube crawler.
+
+# Container
+
+- Always package the internal service as a container.

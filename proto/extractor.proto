@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package extractor;
+option go_package = "github.com/dangquyitt/shadowify/proto/gen/extractor";
+
+// Extractor service definition
+service ExtractorService {
+  // Extract YouTube metadata
+  rpc ExtractYoutubeMetadata(YoutubeRequest) returns (YoutubeMetadataResponse) {}
+  
+  // Extract YouTube transcript
+  rpc ExtractYoutubeTranscript(YoutubeRequest) returns (YoutubeTranscriptResponse) {}
+}
+
+// Request containing YouTube ID
+message YoutubeRequest {
+  string youtube_id = 1;
+}
+
+// Response containing YouTube metadata
+message YoutubeMetadataResponse {
+  string id = 1;
+  string title = 2;
+  string full_title = 3;
+  string description = 4;
+  int32 duration = 5;
+  string duration_string = 6;
+  string thumbnail = 7;
+  repeated string tags = 8;
+  repeated string categories = 9;
+}
+
+// Segment in a transcript
+message TranscriptSegment {
+  float start = 1;
+  float end = 2;
+  string text = 3;
+}
+
+// Response containing YouTube transcript
+message YoutubeTranscriptResponse {
+  string language_code = 1;
+  repeated TranscriptSegment segments = 2;
+}
