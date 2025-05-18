@@ -11,5 +11,7 @@ database:
   password: postgres
   dbname: shadowify
   sslmode: disable
+http:
+  port: 8080
 youtube:
   apiKey: <your_youtube_api_key>

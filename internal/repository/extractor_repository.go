@@ -4,16 +4,27 @@ import (
 	"context"
 	"shadowify/internal/apperr"
 	extractor "shadowify/proto"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type ExtractorRepository struct {
 	client extractor.ExtractorServiceClient
 }
 
-func NewExtractorRepository(client extractor.ExtractorServiceClient) *ExtractorRepository {
-	return &ExtractorRepository{
-		client: client,
+func NewExtractorRepository(grpcHost string) (*ExtractorRepository, error) {
+	conn, err := grpc.NewClient(
+		grpcHost,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	return &ExtractorRepository{
+		client: extractor.NewExtractorServiceClient(conn),
+	}, nil
 }
 
 func (r *ExtractorRepository) ExtractMetadata(ctx context.Context, youtubeId string) (*extractor.YoutubeMetadataResponse, error) {

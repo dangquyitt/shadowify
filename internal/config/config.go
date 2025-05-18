@@ -15,6 +15,7 @@ type AppConfig struct {
 }
 
 type HTTPConfig struct {
+	Port string `mapstructure:"port"`
 }
 
 type KeycloakConfig struct {

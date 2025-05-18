@@ -1,6 +1,8 @@
 package app
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+)
 
 type App struct {
 	db *sqlx.DB

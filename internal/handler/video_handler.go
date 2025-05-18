@@ -1,10 +1,10 @@
-package http
+package handler
 
 import (
 	"shadowify/internal/apperr"
+	"shadowify/internal/dto"
 	"shadowify/internal/response"
-	"shadowify/internal/video/dto"
-	"shadowify/internal/video/service"
+	"shadowify/internal/service"
 
 	"github.com/labstack/echo/v4"
 )

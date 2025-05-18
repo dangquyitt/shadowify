@@ -11,7 +11,6 @@ The project is a english app to help user leaning english follow by shadowing me
 
 - If the package is a domain please organize it follow by repository, service, model, delivery/http, delivery/grpc(for grpc server implement), dto for request and response.
 - The grpc client is in repository.
-- The high level not depend on the low level. It just depend on interface.
 - Migrations are in migrations folder.
 - Apply DRY, SOLID, KISS principles.
 - The function if have error please return error and don't wrap it with apperr and before response to client please detect if error is apperr.AppErr response with apperr.AppErr. If not, response with apperr.UnexpectedError. Just keep 400, 401, 403, 200 status code.

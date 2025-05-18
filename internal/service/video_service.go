@@ -4,11 +4,9 @@ import (
 	"context"
 	"net/url"
 	"shadowify/internal/apperr"
-	tranmodel "shadowify/internal/transcript/model"
-	tranrepo "shadowify/internal/transcript/repository"
-	"shadowify/internal/video/dto"
-	"shadowify/internal/video/model"
-	"shadowify/internal/video/repository"
+	"shadowify/internal/dto"
+	"shadowify/internal/model"
+	"shadowify/internal/repository"
 	"strings"
 	"time"
 
@@ -18,10 +16,10 @@ import (
 type VideoService struct {
 	repo        *repository.VideoRepository
 	extractor   *repository.ExtractorRepository
-	segmentRepo *tranrepo.SegmentRepository
+	segmentRepo *repository.SegmentRepository
 }
 
-func NewVideoService(repo *repository.VideoRepository, segmentRepo *tranrepo.SegmentRepository, extractor *repository.ExtractorRepository) *VideoService {
+func NewVideoService(repo *repository.VideoRepository, segmentRepo *repository.SegmentRepository, extractor *repository.ExtractorRepository) *VideoService {
 	return &VideoService{
 		repo:        repo,
 		segmentRepo: segmentRepo,
@@ -90,9 +88,9 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		return nil, err
 	}
 
-	segments := make([]*tranmodel.Segment, len(transcript.Segments))
+	segments := make([]*model.Segment, len(transcript.Segments))
 	for i, segment := range transcript.Segments {
-		segments[i] = &tranmodel.Segment{
+		segments[i] = &model.Segment{
 			VideoId:  video.Id,
 			StartSec: segment.Start,
 			EndSec:   segment.End,

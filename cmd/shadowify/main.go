@@ -4,23 +4,16 @@ import (
 	"context"
 	"fmt"
 	stdlog "log"
-	"net/http"
 	"os"
 	"os/signal"
 	"shadowify/internal/config"
 	"shadowify/internal/database"
+	"shadowify/internal/handler"
 	"shadowify/internal/logger"
-	"shadowify/internal/server"
-	"shadowify/internal/transcript/repository"
-	videohttp "shadowify/internal/video/delivery/http"
-	vdrepo "shadowify/internal/video/repository"
-	"shadowify/internal/video/service"
-	extractor "shadowify/proto"
-	"time"
+	"shadowify/internal/repository"
+	"shadowify/internal/service"
 
 	"github.com/labstack/echo/v4"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -45,39 +38,26 @@ func main() {
 		stdlog.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	conn, err := grpc.NewClient(
-		"localhost:50051",
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		logger.Errorf("Failed to connect to gRPC server: %v", err)
-		return
-	}
-	client := extractor.NewExtractorServiceClient(conn)
-
 	segmentRepo := repository.NewSegmentRepository(db)
-	extractorRepo := vdrepo.NewExtractorRepository(client)
+	extractorRepo, err := repository.NewExtractorRepository("localhost:50051")
+	if err != nil {
+		logger.Fatalf("Failed to create gRPC client: %v", err)
+	}
 
 	// Setup service dependencies (use nil for repository and grpc client for now)
-	videoRepository := vdrepo.NewVideoRepository(db)
+	videoRepository := repository.NewVideoRepository(db)
 	videoService := service.NewVideoService(videoRepository, segmentRepo, extractorRepo)
-	videoHandler := videohttp.NewVideoHandler(videoService)
+	videoHandler := handler.NewVideoHandler(videoService)
 
-	// Prepare route registrars
-	videoRegistrar := func(e *echo.Echo) {
-		videoHandler.RegisterRoutes(e)
-		// Optionally add root or health check endpoint
-		e.GET("/", func(c echo.Context) error {
-			time.Sleep(5 * time.Second)
-			return c.JSON(http.StatusOK, "OK")
-		})
-	}
+	e := echo.New()
+	videoHandler.RegisterRoutes(e)
+
+	e.Start(":" + cfg.HTTP.Port)
 
 	// Start HTTP server using the new server package
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	server := server.New(":8080", videoRegistrar)
-	if err := server.Start(ctx); err != nil {
-		logger.Errorf("Server error: %v", err)
-	}
+	<-ctx.Done()
+	logger.Info("Shutting down server...")
+
 }

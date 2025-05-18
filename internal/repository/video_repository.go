@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"shadowify/internal/apperr"
-	"shadowify/internal/video/model"
+	"shadowify/internal/model"
 
 	"github.com/jmoiron/sqlx"
 )
