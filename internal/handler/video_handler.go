@@ -20,7 +20,7 @@ func NewVideoHandler(s *service.VideoService) *VideoHandler {
 func (h *VideoHandler) RegisterRoutes(e *echo.Echo) {
 	v := e.Group("/videos")
 	v.POST("", h.Create)
-	v.GET(":id", h.GetByID)
+	v.GET("/:id", h.GetByID)
 	v.GET("", h.List)
 }
 

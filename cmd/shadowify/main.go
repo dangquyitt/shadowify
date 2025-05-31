@@ -14,6 +14,7 @@ import (
 	"shadowify/internal/service"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -39,18 +40,30 @@ func main() {
 	}
 
 	segmentRepo := repository.NewSegmentRepository(db)
-	extractorRepo, err := repository.NewExtractorRepository("localhost:50051")
-	if err != nil {
-		logger.Fatalf("Failed to create gRPC client: %v", err)
-	}
 
 	// Setup service dependencies (use nil for repository and grpc client for now)
+	whisperService := service.NewWhisperService()
+	ytDLPService := service.NewYTDLPService()
 	videoRepository := repository.NewVideoRepository(db)
-	videoService := service.NewVideoService(videoRepository, segmentRepo, extractorRepo)
+	segmentRepository := repository.NewSegmentRepository(db)
+
+	videoService := service.NewVideoService(videoRepository, segmentRepo, whisperService, ytDLPService)
+	segmentService := service.NewSegmentService(segmentRepository)
+
+	// Setup language repository and service
+	languageRepository := repository.NewLanguageRepository(db)
+	languageService := service.NewLanguageService(languageRepository)
+
+	// Setup handlers
 	videoHandler := handler.NewVideoHandler(videoService)
+	segmentHandler := handler.NewSegmentHandler(segmentService)
+	languageHandler := handler.NewLanguageHandler(languageService)
 
 	e := echo.New()
+	e.Use(middleware.CORS())
 	videoHandler.RegisterRoutes(e)
+	segmentHandler.RegisterRoutes(e)
+	languageHandler.RegisterRoutes(e)
 
 	e.Start(":" + cfg.HTTP.Port)
 

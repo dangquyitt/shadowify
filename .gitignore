@@ -27,3 +27,6 @@ configs/config.prod.yml
 
 # Logs
 log/
+
+# lib
+lib/

@@ -7,13 +7,14 @@ services:
     container_name: shadowify
     restart: unless-stopped
     ports:
-      - 8000:8080
+      - 8080:8080
     env_file:
       - .env
     volumes:
       - ./configs:/configs
     depends_on:
       - postgres
+      - keycloak
     networks:
       - shadowify-network
 
@@ -23,8 +24,10 @@ services:
     restart: unless-stopped
     ports:
       - 5432:5432
-    env_file:
-      - .env
+    environment:
+      - POSTGRES_DB=shadowify
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -50,54 +53,23 @@ services:
     restart: unless-stopped
     ports:
       - 8082:8080
-    env_file:
-      - .env
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=postgres
+      - KC_HTTP_PORT=8080
+    volumes:
+      - ./volumes/keycloak:/opt/keycloak/data/import
     command: "start-dev"
     depends_on:
       - postgres
     networks:
       - shadowify-network
 
-  es:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
-    container_name: es
-    restart: unless-stopped
-    ports:
-      - 9200:9200
-    volumes:
-      - es-data:/usr/share/elasticsearch/data
-    networks:
-      - shadowify-network
-    mem_limit: 1GB
-
-  metadata:
-    build:
-      context: ./services/metadata-service
-      dockerfile: Dockerfile
-    image: dangquyitt/metadata:latest
-    container_name: metadata
-    restart: unless-stopped
-    ports:
-      - 50051:50051
-    networks:
-      - shadowify-network
-
-  transcriber:
-    build:
-      context: ./services/transcriber-service
-      dockerfile: Dockerfile
-    image: dangquyitt/transcriber:latest
-    container_name: transcriber
-    volumes:
-      - /tmp:/tmp
-    restart: unless-stopped
-    ports:
-      - 50052:50051
-    networks:
-      - shadowify-network
-
 volumes:
-  es-data:
   postgres-data:
   adminer-data:
 

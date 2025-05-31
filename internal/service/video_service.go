@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"net/url"
+	"os"
 	"shadowify/internal/apperr"
+	"shadowify/internal/database"
 	"shadowify/internal/dto"
 	"shadowify/internal/model"
 	"shadowify/internal/repository"
@@ -14,16 +16,18 @@ import (
 )
 
 type VideoService struct {
-	repo        *repository.VideoRepository
-	extractor   *repository.ExtractorRepository
-	segmentRepo *repository.SegmentRepository
+	repo           *repository.VideoRepository
+	segmentRepo    *repository.SegmentRepository
+	whisperService *WhisperService
+	ytDLPService   *YTDLPService
 }
 
-func NewVideoService(repo *repository.VideoRepository, segmentRepo *repository.SegmentRepository, extractor *repository.ExtractorRepository) *VideoService {
+func NewVideoService(repo *repository.VideoRepository, segmentRepo *repository.SegmentRepository, whisperService *WhisperService, ytDLPService *YTDLPService) *VideoService {
 	return &VideoService{
-		repo:        repo,
-		segmentRepo: segmentRepo,
-		extractor:   extractor,
+		repo:           repo,
+		segmentRepo:    segmentRepo,
+		whisperService: whisperService,
+		ytDLPService:   ytDLPService,
 	}
 }
 
@@ -58,7 +62,7 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		return nil, err
 	}
 
-	metadata, err := s.extractor.ExtractMetadata(ctx, youtubeId)
+	metadata, filePath, err := s.ytDLPService.DownloadAndExtract(ctx, youtubeId)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +76,8 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		Duration:       metadata.Duration,
 		DurationString: metadata.DurationString,
 		Thumbnail:      metadata.Thumbnail,
-		Tags:           metadata.Tags,
-		Categories:     metadata.Categories,
+		Tags:           database.JSONType[[]string]{Data: metadata.Tags},
+		Categories:     database.JSONType[[]string]{Data: metadata.Categories},
 		CreatedAt:      time.Now().UTC(),
 		UpdatedAt:      time.Now().UTC(),
 	}
@@ -83,24 +87,23 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		return nil, err
 	}
 
-	transcript, err := s.extractor.ExtractTranscript(ctx, youtubeId)
+	segments, err := s.whisperService.Transcribe(ctx, filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	segments := make([]*model.Segment, len(transcript.Segments))
-	for i, segment := range transcript.Segments {
-		segments[i] = &model.Segment{
-			VideoId:  video.Id,
-			StartSec: segment.Start,
-			EndSec:   segment.End,
-			Content:  segment.Text,
-		}
+	for i := range segments {
+		segments[i].VideoId = video.Id
 	}
 
 	err = s.segmentRepo.Create(ctx, segments)
 	if err != nil {
 		return nil, err
+	}
+
+	err = os.Remove(filePath)
+	if err != nil {
+		return nil, apperr.NewAppErr("file.remove.error", "Failed to remove downloaded file").WithCause(err)
 	}
 
 	return video, nil

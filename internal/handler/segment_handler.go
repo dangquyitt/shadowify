@@ -30,7 +30,7 @@ func NewSegmentHandler(segmentService *service.SegmentService) *SegmentHandler {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /v1/segments [get]
 func (h *SegmentHandler) GetSegmentsByVideoID(c echo.Context) error {
-	videoID := c.QueryParam("video_id")
+	videoID := c.Param("video_id")
 	if videoID == "" {
 		return response.WriteError(c, apperr.NewAppErr("segment.invalid_video_id", "video_id is required"))
 	}
@@ -45,6 +45,5 @@ func (h *SegmentHandler) GetSegmentsByVideoID(c echo.Context) error {
 
 // RegisterRoutes registers the segment routes to the provided Echo instance
 func (h *SegmentHandler) RegisterRoutes(e *echo.Echo) {
-	api := e.Group("/v1/segments")
-	api.GET("", h.GetSegmentsByVideoID)
+	e.GET("/videos/:video_id/segments", h.GetSegmentsByVideoID)
 }

@@ -3,12 +3,11 @@ package config
 import "github.com/spf13/viper"
 
 type Config struct {
-	App           AppConfig           `mapstructure:"app"`
-	HTTP          HTTPConfig          `mapstructure:"http"`
-	Database      DatabaseConfig      `mapstructure:"database"`
-	Logger        LoggerConfig        `mapstructure:"logger"`
-	Youtube       YoutubeConfig       `mapstructure:"youtube"`
-	Elasticsearch ElasticsearchConfig `mapstructure:"elasticsearch"`
+	App      AppConfig      `mapstructure:"app"`
+	HTTP     HTTPConfig     `mapstructure:"http"`
+	Database DatabaseConfig `mapstructure:"database"`
+	Logger   LoggerConfig   `mapstructure:"logger"`
+	Youtube  YoutubeConfig  `mapstructure:"youtube"`
 }
 
 type AppConfig struct {
@@ -25,10 +24,6 @@ type KeycloakConfig struct {
 	Host         string `mapstructure:"host"`
 	Username     string `mapstructure:"username"`
 	Password     string `mapstructure:"password"`
-}
-
-type ElasticsearchConfig struct {
-	URL string `mapstructure:"url"`
 }
 
 type DatabaseConfig struct {
@@ -49,9 +44,9 @@ type LoggerFileConfig struct {
 	Level      string `mapstructure:"level"`
 	Enabled    bool   `mapstructure:"enabled"`
 	Path       string `mapstructure:"path"`
-	MaxSize    int    `mapstructure:"maxSize"`
-	MaxBackups int    `mapstructure:"maxBackups"`
-	MaxAge     int    `mapstructure:"maxAge"`
+	MaxSize    int    `mapstructure:"max_size"`
+	MaxBackups int    `mapstructure:"max_backups"`
+	MaxAge     int    `mapstructure:"max_age"`
 	Compress   bool   `mapstructure:"compress"`
 }
 
@@ -60,7 +55,7 @@ type LoggerConsoleConfig struct {
 	Enabled bool   `mapstructure:"enabled"`
 }
 type YoutubeConfig struct {
-	APIKey string
+	APIKey string `mapstructure:"api_key"`
 }
 
 func LoadConfig(path string) (*Config, error) {
