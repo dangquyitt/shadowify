@@ -9,6 +9,7 @@ import (
 
 	"shadowify/internal/apperr"
 	"shadowify/internal/logger"
+	"shadowify/internal/pagination"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,6 +19,10 @@ import (
 // It takes an echo.Context and any data as input and returns an error.
 func Success(c echo.Context, data any) error {
 	return c.JSON(http.StatusOK, NewSuccessResponse(data))
+}
+
+func SuccessWithPagination(c echo.Context, data any, pagination *pagination.Pagination) error {
+	return c.JSON(http.StatusOK, NewSuccessResponse(data).WithPagination(pagination))
 }
 
 // WriteError writes an error response based on error type.

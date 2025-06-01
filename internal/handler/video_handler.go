@@ -3,6 +3,7 @@ package handler
 import (
 	"shadowify/internal/apperr"
 	"shadowify/internal/dto"
+	"shadowify/internal/model"
 	"shadowify/internal/response"
 	"shadowify/internal/service"
 
@@ -49,9 +50,14 @@ func (h *VideoHandler) GetByID(c echo.Context) error {
 
 func (h *VideoHandler) List(c echo.Context) error {
 	ctx := c.Request().Context()
-	videos, err := h.service.List(ctx)
+	var filter model.VideoFilter
+	if err := c.Bind(&filter); err != nil {
+		return response.WriteError(c, apperr.NewAppErr("bad_request", "invalid filter parameters"))
+	}
+
+	videos, total, err := h.service.List(ctx, &filter)
 	if err != nil {
 		return response.WriteError(c, err)
 	}
-	return response.Success(c, videos)
+	return response.SuccessWithPagination(c, videos, filter.Pagination.WithTotal(total))
 }

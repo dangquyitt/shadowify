@@ -2,14 +2,17 @@ package model
 
 import (
 	"shadowify/internal/database"
+	"shadowify/internal/pagination"
 	"time"
 )
 
 type VideoFilter struct {
+	Pagination pagination.Pagination
 }
 
 type Video struct {
 	Id             string                      `db:"id" json:"id"`
+	LanguageId     string                      `db:"language_id" json:"language_id"`
 	Title          string                      `db:"title" json:"title"`
 	FullTitle      string                      `db:"full_title" json:"full_title"`
 	Description    string                      `db:"description" json:"description"`

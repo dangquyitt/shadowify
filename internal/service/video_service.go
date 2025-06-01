@@ -117,10 +117,6 @@ func (s *VideoService) GetById(ctx context.Context, id string) (*model.Video, er
 	return video, nil
 }
 
-func (s *VideoService) List(ctx context.Context) ([]*model.Video, error) {
-	videos, err := s.repo.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return videos, nil
+func (s *VideoService) List(ctx context.Context, filter *model.VideoFilter) ([]*model.Video, int64, error) {
+	return s.repo.List(ctx, filter)
 }

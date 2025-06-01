@@ -34,7 +34,7 @@ func main() {
 	logger.SetDefaultLogger(logger.NewZerologAdapter(cfg.Logger))
 	logger.Infof("App started in %s mode", env)
 
-	db, err := database.NewDatabase(cfg)
+	db := database.NewGromDatabase(cfg.Database)
 	if err != nil {
 		stdlog.Fatalf("Failed to connect to database: %v", err)
 	}

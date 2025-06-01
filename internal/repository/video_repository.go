@@ -5,23 +5,19 @@ import (
 	"shadowify/internal/apperr"
 	"shadowify/internal/model"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 type VideoRepository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
-func NewVideoRepository(db *sqlx.DB) *VideoRepository {
+func NewVideoRepository(db *gorm.DB) *VideoRepository {
 	return &VideoRepository{db: db}
 }
 
 func (r *VideoRepository) Create(ctx context.Context, video *model.Video) error {
-	query := `
-			INSERT INTO videos (id, title, full_title, description, youtube_id, duration, duration_string, thumbnail, tags, categories, created_at, updated_at)
-			VALUES (:id, :title, :full_title, :description, :youtube_id, :duration, :duration_string, :thumbnail, :tags, :categories, :created_at, :updated_at)
-		`
-	_, err := r.db.NamedExecContext(ctx, query, video)
+	err := r.db.WithContext(ctx).Create(video).Error
 	if err != nil {
 		return apperr.NewAppErr("video.create.error", "Failed to create video").WithCause(err)
 	}
@@ -30,26 +26,37 @@ func (r *VideoRepository) Create(ctx context.Context, video *model.Video) error 
 
 func (r *VideoRepository) GetById(ctx context.Context, id string) (*model.Video, error) {
 	var video model.Video
-	err := r.db.GetContext(ctx, &video, "SELECT * FROM videos WHERE id = $1", id)
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&video).Error
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, apperr.NewAppErr("video.not_found", "Video not found")
+		}
+		return nil, apperr.NewAppErr("video.get_by_id.error", "Failed to get video by ID").WithCause(err)
 	}
 	return &video, nil
 }
 
-func (r *VideoRepository) List(ctx context.Context) ([]*model.Video, error) {
+func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) ([]*model.Video, int64, error) {
 	var videos []*model.Video
-	err := r.db.SelectContext(ctx, &videos, "SELECT * FROM videos ORDER BY created_at DESC")
-	return videos, err
+	var total int64
+
+	err := r.db.WithContext(ctx).Model(&model.Video{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to count videos").WithCause(err)
+	}
+
+	query := r.db.WithContext(ctx).Model(&model.Video{})
+	err = query.Order("created_at DESC").Offset(filter.Pagination.Offset()).Limit(filter.Pagination.Limit()).Find(&videos).Error
+	if err != nil {
+		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to list videos").WithCause(err)
+	}
+	return videos, total, nil
 }
 
 func (r *VideoRepository) Update(ctx context.Context, video *model.Video) error {
-	query := `UPDATE video SET title=:title, description=:description, tags=:tags, updated_at=:updated_at WHERE id=:id`
-	_, err := r.db.NamedExecContext(ctx, query, video)
-	return err
+	return r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", video.Id).Updates(video).Error
 }
 
 func (r *VideoRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM videos WHERE id = $1", id)
-	return err
+	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Video{}).Error
 }
