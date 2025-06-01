@@ -3,7 +3,6 @@ package model
 import (
 	"shadowify/internal/database"
 	"shadowify/internal/pagination"
-	"time"
 )
 
 type VideoFilter struct {
@@ -11,7 +10,7 @@ type VideoFilter struct {
 }
 
 type Video struct {
-	Id             string                      `db:"id" json:"id"`
+	Base
 	LanguageId     string                      `db:"language_id" json:"language_id"`
 	Title          string                      `db:"title" json:"title"`
 	FullTitle      string                      `db:"full_title" json:"full_title"`
@@ -22,6 +21,4 @@ type Video struct {
 	Thumbnail      string                      `db:"thumbnail" json:"thumbnail"`
 	Tags           database.JSONType[[]string] `db:"tags" json:"tags"`
 	Categories     database.JSONType[[]string] `db:"categories" json:"categories"`
-	CreatedAt      time.Time                   `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time                   `db:"updated_at" json:"updated_at"`
 }

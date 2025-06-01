@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE
     IF NOT EXISTS languages (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid (),
         code TEXT UNIQUE NOT NULL DEFAULT '',
         flag_url TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL DEFAULT '',
@@ -11,7 +11,7 @@ CREATE TABLE
     );
 
 ALTER TABLE videos
-ADD COLUMN IF NOT EXISTS language_id uuid;
+ADD COLUMN IF NOT EXISTS language_id TEXT;
 
 -- +goose StatementEnd
 -- +goose Down

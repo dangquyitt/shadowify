@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE
     IF NOT EXISTS videos (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid (),
         title TEXT NOT NULL DEFAULT '',
         full_title TEXT NOT NULL DEFAULT '',
         description TEXT NOT NULL DEFAULT '',

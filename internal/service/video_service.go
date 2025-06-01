@@ -10,9 +10,6 @@ import (
 	"shadowify/internal/model"
 	"shadowify/internal/repository"
 	"strings"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 type VideoService struct {
@@ -68,7 +65,6 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 	}
 
 	video := &model.Video{
-		Id:             uuid.NewString(),
 		Title:          metadata.Title,
 		FullTitle:      metadata.FullTitle,
 		Description:    metadata.Description,
@@ -78,8 +74,6 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		Thumbnail:      metadata.Thumbnail,
 		Tags:           database.JSONType[[]string]{Data: metadata.Tags},
 		Categories:     database.JSONType[[]string]{Data: metadata.Categories},
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      time.Now().UTC(),
 	}
 
 	err = s.repo.Create(ctx, video)

@@ -1,12 +1,10 @@
 package model
 
 type Language struct {
-	Id        string `db:"id" json:"id"`
-	Code      string `db:"code" json:"code"`
-	Name      string `db:"name" json:"name"`
-	FlagURL   string `db:"flag_url" json:"flag_url"`
-	CreatedAt string `db:"created_at" json:"created_at"`
-	UpdatedAt string `db:"updated_at" json:"updated_at"`
+	Base
+	Code    string `db:"code" json:"code"`
+	Name    string `db:"name" json:"name"`
+	FlagURL string `db:"flag_url" json:"flag_url"`
 }
 
 // CreateLanguageRequest represents the request body for creating a language

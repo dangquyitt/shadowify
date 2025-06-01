@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"shadowify/internal/model"
+	"strings"
 )
 
 type WhisperService struct {
@@ -93,9 +94,9 @@ func (s *WhisperService) Transcribe(ctx context.Context, audioFilePath string) (
 	segments := make([]*model.Segment, len(parsed.Transcription))
 	for i, t := range parsed.Transcription {
 		segments[i] = &model.Segment{
-			StartSec: t.Offsets.From,
-			EndSec:   t.Offsets.To,
-			Content:  t.Text,
+			StartSec: t.Offsets.From / 1000,
+			EndSec:   t.Offsets.To / 1000,
+			Content:  strings.TrimSpace(t.Text),
 		}
 	}
 
