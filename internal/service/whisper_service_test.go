@@ -9,7 +9,7 @@ import (
 
 func TestWhisperService_DetectLanguage(t *testing.T) {
 	service := NewWhisperService()
-	audioFilePath := "../../tmp/nawe0Nl93IA.wav" // Replace with a valid audio file path for testing
+	audioFilePath := "./tmp/nawe0Nl93IA.wav" // Replace with a valid audio file path for testing
 
 	// Call the DetectLanguage method
 	language, err := service.DetectLanguage(context.Background(), audioFilePath)

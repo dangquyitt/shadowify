@@ -49,6 +49,7 @@ func main() {
 
 	videoService := service.NewVideoService(videoRepository, segmentRepo, whisperService, ytDLPService)
 	segmentService := service.NewSegmentService(segmentRepository)
+	sttService := service.NewSTTService(whisperService)
 
 	// Setup language repository and service
 	languageRepository := repository.NewLanguageRepository(db)
@@ -58,12 +59,14 @@ func main() {
 	videoHandler := handler.NewVideoHandler(videoService)
 	segmentHandler := handler.NewSegmentHandler(segmentService)
 	languageHandler := handler.NewLanguageHandler(languageService)
+	sttHandler := handler.NewSTTHandler(sttService)
 
 	e := echo.New()
 	e.Use(middleware.CORS())
 	videoHandler.RegisterRoutes(e)
 	segmentHandler.RegisterRoutes(e)
 	languageHandler.RegisterRoutes(e)
+	sttHandler.RegisterRoutes(e)
 
 	e.Start(":" + cfg.HTTP.Port)
 

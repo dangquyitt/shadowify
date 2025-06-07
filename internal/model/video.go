@@ -11,6 +11,7 @@ type VideoFilter struct {
 
 type Video struct {
 	Base
+	Cefr           string                      `db:"cefr" json:"cefr"`
 	LanguageId     string                      `db:"language_id" json:"language_id"`
 	Title          string                      `db:"title" json:"title"`
 	FullTitle      string                      `db:"full_title" json:"full_title"`

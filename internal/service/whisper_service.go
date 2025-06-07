@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"shadowify/internal/logger"
 	"shadowify/internal/model"
 	"strings"
 )
@@ -105,4 +106,44 @@ func (s *WhisperService) Transcribe(ctx context.Context, audioFilePath string) (
 	}
 
 	return segments, nil
+}
+
+func convertToWav(inputPath, outputPath string) error {
+	cmd := exec.Command("ffmpeg", "-y", "-i", inputPath,
+		"-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", outputPath)
+	cmd.Stderr = os.Stderr // để debug lỗi nếu cần
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
+func (s *WhisperService) TranscribeNoTimestamps(ctx context.Context, audioFilePath string) (string, error) {
+
+	wavPath := strings.TrimSuffix(audioFilePath, filepath.Ext(audioFilePath)) + ".wav"
+	if err := convertToWav(audioFilePath, wavPath); err != nil {
+		return "", fmt.Errorf("failed to convert to wav: %w", err)
+	}
+	wd, _ := os.Getwd()
+	cmd := exec.Command(filepath.Join(wd, "lib/whisper-cli"),
+		"-m", filepath.Join(wd, "lib/ggml-large-v3-turbo.bin"),
+		"-f", wavPath,
+		"-np",
+		"-nt",
+		"-t", fmt.Sprintf("%d", runtime.NumCPU()-2),
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to run whisper-cli: %w", err)
+	}
+
+	go func() {
+		if err := os.Remove(wavPath); err != nil {
+			logger.Errorf("failed to delete wav file: %v", err)
+		}
+
+		if err := os.Remove(audioFilePath); err != nil {
+			logger.Errorf("failed to delete output file: %v", err)
+		}
+	}()
+
+	return strings.TrimSpace(string(output)), nil
 }

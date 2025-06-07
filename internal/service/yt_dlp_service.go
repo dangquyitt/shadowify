@@ -21,7 +21,7 @@ func NewYTDLPService() *YTDLPService {
 
 func (s *YTDLPService) DownloadAndExtract(ctx context.Context, youtubeId string) (*model.YoutubeMetadata, string, error) {
 	url := "https://www.youtube.com/watch?v=" + youtubeId
-	outputPath := filepath.Join("../../tmp", youtubeId+".wav")
+	outputPath := filepath.Join("./tmp", youtubeId+".wav")
 
 	cmd := exec.Command("yt-dlp",
 		"-x",
