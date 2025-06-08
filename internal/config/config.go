@@ -8,9 +8,20 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Logger   LoggerConfig   `mapstructure:"logger"`
 	Youtube  YoutubeConfig  `mapstructure:"youtube"`
+	Azure    AzureConfig    `mapstructure:"azure"`
 }
 
 type AppConfig struct {
+}
+
+type AzureConfig struct {
+	Translator AzureTranslatorConfig `mapstructure:"translator"`
+}
+
+type AzureTranslatorConfig struct {
+	URI    string `mapstructure:"uri"`
+	APIKey string `mapstructure:"api_key"`
+	Region string `mapstructure:"region"`
 }
 
 type HTTPConfig struct {

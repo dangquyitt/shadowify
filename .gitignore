@@ -30,3 +30,9 @@ log/
 
 # lib
 lib/
+
+tmp
+
+whisper.cpp
+
+CEFR-SP

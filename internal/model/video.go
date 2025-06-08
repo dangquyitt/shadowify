@@ -6,6 +6,7 @@ import (
 )
 
 type VideoFilter struct {
+	Q          *string `json:"q" query:"q"`
 	Pagination pagination.Pagination
 }
 

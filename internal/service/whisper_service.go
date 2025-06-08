@@ -61,11 +61,13 @@ func (s *WhisperService) DetectLanguage(ctx context.Context, audioFilePath strin
 func (s *WhisperService) Transcribe(ctx context.Context, audioFilePath string) ([]*model.Segment, error) {
 	wd, _ := os.Getwd()
 	cmd := exec.Command(filepath.Join(wd, "lib/whisper-cli"),
-		"-m", filepath.Join(wd, "lib/ggml-large-v3-turbo.bin"),
+		"-m", filepath.Join(wd, "lib/ggml-base.en.bin"),
 		"-f", audioFilePath,
 		"-np",
 		"-t", fmt.Sprintf("%d", runtime.NumCPU()-2),
 		"-oj",
+		"-sow",
+		"-wt", "0.1",
 	)
 
 	if err := cmd.Run(); err != nil {
@@ -124,10 +126,11 @@ func (s *WhisperService) TranscribeNoTimestamps(ctx context.Context, audioFilePa
 	}
 	wd, _ := os.Getwd()
 	cmd := exec.Command(filepath.Join(wd, "lib/whisper-cli"),
-		"-m", filepath.Join(wd, "lib/ggml-large-v3-turbo.bin"),
+		"-m", filepath.Join(wd, "lib/ggml-tiny.bin"),
 		"-f", wavPath,
 		"-np",
 		"-nt",
+		"-nf",
 		"-t", fmt.Sprintf("%d", runtime.NumCPU()-2),
 	)
 	output, err := cmd.Output()

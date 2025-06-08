@@ -46,20 +46,21 @@ func main() {
 	ytDLPService := service.NewYTDLPService()
 	videoRepository := repository.NewVideoRepository(db)
 	segmentRepository := repository.NewSegmentRepository(db)
+	languageRepository := repository.NewLanguageRepository(db)
 
+	// Initialize services
 	videoService := service.NewVideoService(videoRepository, segmentRepo, whisperService, ytDLPService)
 	segmentService := service.NewSegmentService(segmentRepository)
 	sttService := service.NewSTTService(whisperService)
-
-	// Setup language repository and service
-	languageRepository := repository.NewLanguageRepository(db)
-	languageService := service.NewLanguageService(languageRepository)
+	translatorService := service.NewTranslatorService(cfg.Azure.Translator)
 
 	// Setup handlers
 	videoHandler := handler.NewVideoHandler(videoService)
 	segmentHandler := handler.NewSegmentHandler(segmentService)
+	languageService := service.NewLanguageService(languageRepository)
 	languageHandler := handler.NewLanguageHandler(languageService)
 	sttHandler := handler.NewSTTHandler(sttService)
+	translatorHandler := handler.NewTranslatorHandler(translatorService)
 
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -67,6 +68,7 @@ func main() {
 	segmentHandler.RegisterRoutes(e)
 	languageHandler.RegisterRoutes(e)
 	sttHandler.RegisterRoutes(e)
+	translatorHandler.RegisterRoutes(e)
 
 	e.Start(":" + cfg.HTTP.Port)
 

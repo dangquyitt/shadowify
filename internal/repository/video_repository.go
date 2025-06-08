@@ -40,16 +40,33 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 	var videos []*model.Video
 	var total int64
 
-	err := r.db.WithContext(ctx).Model(&model.Video{}).Count(&total).Error
+	// Base queries for count and data selection
+	countQuery := r.db.WithContext(ctx).Model(&model.Video{})
+	query := r.db.WithContext(ctx).Model(&model.Video{})
+
+	// Apply full-text search filter if provided
+	if filter.Q != nil && *filter.Q != "" {
+		// Search across title, full_title, and description
+		ftSearch := "to_tsvector('english', coalesce(title,'') || ' ' || coalesce(full_title,'') || ' ' || coalesce(description,'')) @@ plainto_tsquery('english', ?)"
+		countQuery = countQuery.Where(ftSearch, *filter.Q)
+		query = query.Where(ftSearch, *filter.Q)
+	}
+
+	// Count total with filter
+	err := countQuery.Count(&total).Error
 	if err != nil {
 		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to count videos").WithCause(err)
 	}
 
-	query := r.db.WithContext(ctx).Model(&model.Video{})
-	err = query.Order("created_at DESC").Offset(filter.Pagination.Offset()).Limit(filter.Pagination.Limit()).Find(&videos).Error
+	// Fetch paginated data with filter
+	err = query.Order("created_at DESC").
+		Offset(filter.Pagination.Offset()).
+		Limit(filter.Pagination.Limit()).
+		Find(&videos).Error
 	if err != nil {
 		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to list videos").WithCause(err)
 	}
+
 	return videos, total, nil
 }
 
