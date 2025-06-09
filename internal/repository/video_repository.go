@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"shadowify/internal/apperr"
+	"shadowify/internal/ftsearch"
 	"shadowify/internal/model"
 
 	"gorm.io/gorm"
@@ -46,10 +47,11 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 
 	// Apply full-text search filter if provided
 	if filter.Q != nil && *filter.Q != "" {
+		tsquery := gorm.Expr("to_tsquery('simple', ?)", ftsearch.BuildTsqueryExpression(*filter.Q, ftsearch.WithPrefixMatching()))
 		// Search across title, full_title, and description
-		ftSearch := "to_tsvector('english', coalesce(title,'') || ' ' || coalesce(full_title,'') || ' ' || coalesce(description,'')) @@ plainto_tsquery('english', ?)"
-		countQuery = countQuery.Where(ftSearch, *filter.Q)
-		query = query.Where(ftSearch, *filter.Q)
+		ftSearch := "to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(full_title,'') || ' ' || coalesce(description,'')) @@ ?"
+		countQuery = countQuery.Where(ftSearch, tsquery)
+		query = query.Where(ftSearch, tsquery)
 	}
 
 	// Count total with filter
