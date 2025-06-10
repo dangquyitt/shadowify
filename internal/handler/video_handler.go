@@ -22,7 +22,7 @@ func NewVideoHandler(s *service.VideoService) *VideoHandler {
 func (h *VideoHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMiddleware) {
 	v := e.Group("/videos")
 	v.POST("", h.Create)
-	v.GET("/:id", h.GetByID)
+	v.GET("/:id", h.GetByID, auth.Authenticate)
 	v.GET("", h.List)
 	v.GET("/favorites", h.GetFavoriteVideos, auth.Authenticate)
 }
@@ -61,7 +61,11 @@ func (h *VideoHandler) Create(c echo.Context) error {
 func (h *VideoHandler) GetByID(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")
-	video, err := h.service.GetById(ctx, id)
+	user, ok := model.FromContext(ctx)
+	if !ok {
+		return response.WriteError(c, apperr.NewAppErr("unauthorized", "User not authenticated"))
+	}
+	video, err := h.service.GetById(ctx, id, user.Id)
 	if err != nil {
 		return response.WriteError(c, err)
 	}

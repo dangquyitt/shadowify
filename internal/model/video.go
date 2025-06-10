@@ -28,3 +28,8 @@ type Video struct {
 	Tags           database.JSONType[[]string] `db:"tags" json:"tags"`
 	Categories     database.JSONType[[]string] `db:"categories" json:"categories"`
 }
+
+type VideoDetail struct {
+	Video
+	IsFavorite bool `json:"is_favorite"`
+}

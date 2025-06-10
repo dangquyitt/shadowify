@@ -103,8 +103,8 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 	return video, nil
 }
 
-func (s *VideoService) GetById(ctx context.Context, id string) (*model.Video, error) {
-	video, err := s.repo.GetById(ctx, id)
+func (s *VideoService) GetById(ctx context.Context, id, userId string) (*model.VideoDetail, error) {
+	video, err := s.repo.GetById(ctx, id, userId)
 	if err != nil {
 		return nil, err
 	}

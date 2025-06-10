@@ -25,14 +25,10 @@ func (r *VideoRepository) Create(ctx context.Context, video *model.Video) error 
 	return nil
 }
 
-func (r *VideoRepository) GetById(ctx context.Context, id string) (*model.Video, error) {
-	var video model.Video
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&video).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, apperr.NewAppErr("video.not_found", "Video not found")
-		}
-		return nil, apperr.NewAppErr("video.get_by_id.error", "Failed to get video by ID").WithCause(err)
+func (r *VideoRepository) GetById(ctx context.Context, id, userId string) (*model.VideoDetail, error) {
+	var video model.VideoDetail
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).Select("*, (SELECT 1 FROM favorites WHERE user_id = ? AND video_id = videos.id) AS is_favorite", userId).Where("id = ?", id).Scan(&video).Error; err != nil {
+		return nil, apperr.NewAppErr("video.get.error", "Failed to get video by ID").WithCause(err)
 	}
 	return &video, nil
 }
