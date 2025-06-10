@@ -6,8 +6,12 @@ import (
 )
 
 type VideoFilter struct {
-	Q          *string `json:"q" query:"q"`
-	Pagination pagination.Pagination
+	Q *string `json:"q" query:"q"`
+	pagination.Pagination
+}
+
+type FavoriteVideoFilter struct {
+	pagination.Pagination
 }
 
 type Video struct {

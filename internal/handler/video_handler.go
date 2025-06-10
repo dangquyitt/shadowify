@@ -3,6 +3,7 @@ package handler
 import (
 	"shadowify/internal/apperr"
 	"shadowify/internal/dto"
+	"shadowify/internal/middleware"
 	"shadowify/internal/model"
 	"shadowify/internal/response"
 	"shadowify/internal/service"
@@ -18,11 +19,30 @@ func NewVideoHandler(s *service.VideoService) *VideoHandler {
 	return &VideoHandler{service: s}
 }
 
-func (h *VideoHandler) RegisterRoutes(e *echo.Echo) {
+func (h *VideoHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMiddleware) {
 	v := e.Group("/videos")
 	v.POST("", h.Create)
 	v.GET("/:id", h.GetByID)
 	v.GET("", h.List)
+	v.GET("/favorites", h.GetFavoriteVideos, auth.Authenticate)
+}
+
+func (h *VideoHandler) GetFavoriteVideos(c echo.Context) error {
+	ctx := c.Request().Context()
+	user, ok := model.FromContext(ctx)
+	if !ok {
+		return response.WriteError(c, apperr.NewAppErr("unauthorized", "User not authenticated"))
+	}
+	var filter model.FavoriteVideoFilter
+	if err := c.Bind(&filter); err != nil {
+		return response.WriteError(c, apperr.NewAppErr("bad_request", "invalid filter parameters"))
+	}
+
+	videos, total, err := h.service.GetFavoriteVideos(ctx, user.Id, &filter)
+	if err != nil {
+		return response.WriteError(c, err)
+	}
+	return response.SuccessWithPagination(c, videos, filter.Pagination.WithTotal(total))
 }
 
 func (h *VideoHandler) Create(c echo.Context) error {

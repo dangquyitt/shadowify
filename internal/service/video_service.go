@@ -114,3 +114,7 @@ func (s *VideoService) GetById(ctx context.Context, id string) (*model.Video, er
 func (s *VideoService) List(ctx context.Context, filter *model.VideoFilter) ([]*model.Video, int64, error) {
 	return s.repo.List(ctx, filter)
 }
+
+func (s *VideoService) GetFavoriteVideos(ctx context.Context, userId string, filter *model.FavoriteVideoFilter) ([]*model.Video, int64, error) {
+	return s.repo.FindFavoriteVideos(ctx, userId, filter)
+}

@@ -79,3 +79,26 @@ func (r *VideoRepository) Update(ctx context.Context, video *model.Video) error 
 func (r *VideoRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Video{}).Error
 }
+
+func (r *VideoRepository) FindFavoriteVideos(ctx context.Context, userId string, filter *model.FavoriteVideoFilter) ([]*model.Video, int64, error) {
+	var videos []*model.Video
+	query := r.db.WithContext(ctx).
+		Model(&model.Video{}).
+		Joins("JOIN favorites ON favorites.video_id = videos.id").
+		Where("favorites.user_id = ?", userId).
+		Order("favorites.created_at DESC")
+
+	var total int64
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, 0, apperr.NewAppErr("video.find_favorite.error", "Failed to count favorite videos").WithCause(err)
+	}
+
+	err = query.Offset(filter.Pagination.Offset()).
+		Limit(filter.Pagination.Limit()).
+		Find(&videos).Error
+	if err != nil {
+		return nil, 0, apperr.NewAppErr("video.find_favorite.error", "Failed to list favorite videos").WithCause(err)
+	}
+	return videos, total, nil
+}

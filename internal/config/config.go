@@ -9,6 +9,7 @@ type Config struct {
 	Logger   LoggerConfig   `mapstructure:"logger"`
 	Youtube  YoutubeConfig  `mapstructure:"youtube"`
 	Azure    AzureConfig    `mapstructure:"azure"`
+	Keycloak KeycloakConfig `mapstructure:"keycloak"`
 }
 
 type AppConfig struct {

@@ -10,11 +10,12 @@ import (
 	"shadowify/internal/database"
 	"shadowify/internal/handler"
 	"shadowify/internal/logger"
+	"shadowify/internal/middleware"
 	"shadowify/internal/repository"
 	"shadowify/internal/service"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	_echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -47,12 +48,14 @@ func main() {
 	videoRepository := repository.NewVideoRepository(db)
 	segmentRepository := repository.NewSegmentRepository(db)
 	languageRepository := repository.NewLanguageRepository(db)
+	favoriteRepository := repository.NewFavoriteRepository(db)
 
 	// Initialize services
 	videoService := service.NewVideoService(videoRepository, segmentRepo, whisperService, ytDLPService)
 	segmentService := service.NewSegmentService(segmentRepository)
 	sttService := service.NewSTTService(whisperService)
 	translatorService := service.NewTranslatorService(cfg.Azure.Translator)
+	favoriteService := service.NewFavoriteService(favoriteRepository)
 
 	// Setup handlers
 	videoHandler := handler.NewVideoHandler(videoService)
@@ -61,14 +64,22 @@ func main() {
 	languageHandler := handler.NewLanguageHandler(languageService)
 	sttHandler := handler.NewSTTHandler(sttService)
 	translatorHandler := handler.NewTranslatorHandler(translatorService)
+	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
+
+	keycloakMiddleware, err := middleware.NewKeycloakMiddleware(context.Background(), cfg.Keycloak)
+	if err != nil {
+		stdlog.Fatalf("Failed to initialize Keycloak middleware: %v", err)
+	}
 
 	e := echo.New()
-	e.Use(middleware.CORS())
-	videoHandler.RegisterRoutes(e)
+	e.Use(_echomiddleware.CORS())
+	e.Use(_echomiddleware.Recover())
+	videoHandler.RegisterRoutes(e, keycloakMiddleware)
 	segmentHandler.RegisterRoutes(e)
 	languageHandler.RegisterRoutes(e)
 	sttHandler.RegisterRoutes(e)
 	translatorHandler.RegisterRoutes(e)
+	favoriteHandler.RegisterRoutes(e, keycloakMiddleware)
 
 	e.Start(":" + cfg.HTTP.Port)
 
