@@ -1,15 +1,15 @@
 package service
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"shadowify/internal/model"
+
+	"github.com/google/uuid"
 )
 
 type YTDLPService struct {
@@ -20,50 +20,35 @@ func NewYTDLPService() *YTDLPService {
 }
 
 func (s *YTDLPService) DownloadAndExtract(ctx context.Context, youtubeId string) (*model.YoutubeMetadata, string, error) {
-	url := "https://www.youtube.com/watch?v=" + youtubeId
-	outputPath := filepath.Join("./tmp", youtubeId+".wav")
+	uid := uuid.New().String()
+	outputBase := filepath.Join("./tmp", uid)
 
-	cmd := exec.Command("yt-dlp",
+	cmd := exec.CommandContext(ctx, "yt-dlp",
 		"-x",
 		"--audio-format", "wav",
-		"-o", outputPath,
-		"--print-json",
-		url,
+		"--write-info-json",
+		"-o", outputBase,
+		"https://www.youtube.com/watch?v="+youtubeId,
 	)
 
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to get stdout pipe: %w", err)
-	}
-
-	if err := cmd.Start(); err != nil {
-		return nil, "", fmt.Errorf("failed to start yt-dlp: %w", err)
-	}
-
-	var buf bytes.Buffer
-	_, err = io.Copy(&buf, stdoutPipe)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to read stdout: %w", err)
-	}
-
-	if err := cmd.Wait(); err != nil {
+	if err := cmd.Run(); err != nil {
 		return nil, "", fmt.Errorf("yt-dlp command failed: %w", err)
 	}
 
-	metadata := &model.YoutubeMetadata{}
-	err = json.Unmarshal(buf.Bytes(), metadata)
+	jsonPath := outputBase + ".info.json"
+	defer os.Remove(jsonPath)
+
+	jsonData, err := os.ReadFile(jsonPath)
 	if err != nil {
-		scanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			if err := json.Unmarshal(line, metadata); err == nil {
-				break
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			return nil, "", fmt.Errorf("error scanning stdout: %w", err)
-		}
+		return nil, "", fmt.Errorf("failed to read metadata json file: %w", err)
 	}
 
-	return metadata, outputPath, nil
+	metadata := &model.YoutubeMetadata{}
+	if err := json.Unmarshal(jsonData, metadata); err != nil {
+		return nil, "", fmt.Errorf("failed to parse yt-dlp metadata JSON: %w", err)
+	}
+
+	audioPath := outputBase + ".wav"
+
+	return metadata, audioPath, nil
 }

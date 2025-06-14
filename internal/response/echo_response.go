@@ -27,6 +27,9 @@ func SuccessWithPagination(c echo.Context, data any, pagination *pagination.Pagi
 
 // WriteError writes an error response based on error type.
 func WriteError(c echo.Context, err error) error {
+	if err == nil {
+		return c.NoContent(http.StatusNoContent)
+	}
 	if appErr, ok := err.(*apperr.AppErr); ok {
 		logger.Errorf("error: %s, cause: %s", appErr.Error(), appErr.Unwrap().Error())
 		return c.JSON(AppErrCodeToStatus(appErr.Code), NewErrorResponse(appErr))

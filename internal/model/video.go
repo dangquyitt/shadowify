@@ -5,9 +5,19 @@ import (
 	"shadowify/internal/pagination"
 )
 
+type VideoType string
+
+const (
+	VideoPopular  VideoType = "popular"
+	VideoRecent   VideoType = "recent"
+	VideoFavorite VideoType = "favorite"
+)
+
 type VideoFilter struct {
 	Q *string `json:"q" query:"q"`
 	pagination.Pagination
+	Type     VideoType `json:"type" query:"type"` // "popular", "recent", "favorite"
+	Category *string   `json:"category" query:"category"`
 }
 
 type FavoriteVideoFilter struct {
@@ -16,6 +26,7 @@ type FavoriteVideoFilter struct {
 
 type Video struct {
 	Base
+	ViewCount      int64                       `db:"view_count" json:"view_count"`
 	Cefr           string                      `db:"cefr" json:"cefr"`
 	LanguageId     string                      `db:"language_id" json:"language_id"`
 	Title          string                      `db:"title" json:"title"`

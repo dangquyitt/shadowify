@@ -1,12 +1,17 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"shadowify/internal/apperr"
 	"shadowify/internal/database"
 	"shadowify/internal/dto"
+	"shadowify/internal/logger"
 	"shadowify/internal/model"
 	"shadowify/internal/repository"
 	"strings"
@@ -54,14 +59,22 @@ func (s *VideoService) getYoutubeIdFromRawInput(rawInput string) (string, error)
 }
 
 func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) (*model.Video, error) {
+	logger.Infof("Starting video creation with raw input: %s", req.YoutubeRawInput)
 	youtubeId, err := s.getYoutubeIdFromRawInput(req.YoutubeRawInput)
 	if err != nil {
 		return nil, err
 	}
-
+	logger.Infof("Starting download and extraction for YouTube ID: %s", youtubeId)
 	metadata, filePath, err := s.ytDLPService.DownloadAndExtract(ctx, youtubeId)
+	defer func() {
+		if filePath == "" {
+			return
+		}
+		err = os.Remove(filePath)
+		logger.Errorf("Failed to remove file %s: %v", filePath, err)
+	}()
 	if err != nil {
-		return nil, err
+		return nil, apperr.NewAppErr("video.create.error", "Failed to download and extract video").WithCause(err)
 	}
 
 	video := &model.Video{
@@ -76,28 +89,59 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 		Categories:     database.JSONType[[]string]{Data: metadata.Categories},
 	}
 
-	err = s.repo.Create(ctx, video)
-	if err != nil {
-		return nil, err
-	}
-
+	logger.Infof("Starting transcription for video: %s", video.Title)
 	segments, err := s.whisperService.Transcribe(ctx, filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range segments {
-		segments[i].VideoId = video.Id
+	logger.Infof("Starting CEFR prediction for %d segments", len(segments))
+
+	var requestBody struct {
+		Sentences []string `json:"sentences"`
+	}
+	for _, segment := range segments {
+		requestBody.Sentences = append(requestBody.Sentences, segment.Content)
+	}
+	requestBodyByte, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, apperr.NewAppErr("request.encode.error", "Failed to encode request body").WithCause(err)
+	}
+	request, err := http.NewRequest("POST", "http://localhost:5050/predict", bytes.NewBuffer(requestBodyByte))
+	if err != nil {
+		return nil, apperr.NewAppErr("request.create.error", "Failed to create request").WithCause(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, apperr.NewAppErr("request.execute.error", "Failed to execute request").WithCause(err)
+	}
+	defer response.Body.Close()
+
+	var responseBody []struct {
+		Cefr     string `json:"cefr"`
+		Sentence string `json:"sentence"`
+	}
+	if response.StatusCode != http.StatusOK {
+		return nil, apperr.NewAppErr("request.execute.error", "Failed to get response from server").WithCause(err)
+	}
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, apperr.NewAppErr("response.read.error", "Failed to read response").WithCause(err)
+	}
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		return nil, apperr.NewAppErr("response.decode.error", "Failed to decode response").WithCause(err)
 	}
 
-	err = s.segmentRepo.Create(ctx, segments)
+	for i := range segments {
+		segments[i].Cefr = responseBody[i].Cefr
+	}
+
+	logger.Infof("CEFR prediction completed for %d segments", len(segments))
+	err = s.repo.Create(ctx, video, segments)
 	if err != nil {
 		return nil, err
-	}
-
-	err = os.Remove(filePath)
-	if err != nil {
-		return nil, apperr.NewAppErr("file.remove.error", "Failed to remove downloaded file").WithCause(err)
 	}
 
 	return video, nil
@@ -108,6 +152,11 @@ func (s *VideoService) GetById(ctx context.Context, id, userId string) (*model.V
 	if err != nil {
 		return nil, err
 	}
+	go func() {
+		if err := s.repo.IncrementViewCount(context.TODO(), id); err != nil {
+			logger.Warnf("Failed to increment view count for video %s: %v", id, err)
+		}
+	}()
 	return video, nil
 }
 
@@ -117,4 +166,8 @@ func (s *VideoService) List(ctx context.Context, filter *model.VideoFilter) ([]*
 
 func (s *VideoService) GetFavoriteVideos(ctx context.Context, userId string, filter *model.FavoriteVideoFilter) ([]*model.Video, int64, error) {
 	return s.repo.FindFavoriteVideos(ctx, userId, filter)
+}
+
+func (s *VideoService) Categories(ctx context.Context) ([]string, error) {
+	return s.repo.DistinctCategories(ctx)
 }

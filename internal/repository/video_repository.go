@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"shadowify/internal/apperr"
 	"shadowify/internal/ftsearch"
+	"shadowify/internal/logger"
 	"shadowify/internal/model"
 
 	"gorm.io/gorm"
@@ -17,12 +19,29 @@ func NewVideoRepository(db *gorm.DB) *VideoRepository {
 	return &VideoRepository{db: db}
 }
 
-func (r *VideoRepository) Create(ctx context.Context, video *model.Video) error {
-	err := r.db.WithContext(ctx).Create(video).Error
+func (r *VideoRepository) Create(ctx context.Context, video *model.Video, segments []*model.Segment) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.Video{}).Create(video).Error; err != nil {
+			return apperr.NewAppErr("video.create.error", "Failed to create video").WithCause(err)
+		}
+
+		for _, segment := range segments {
+			segment.VideoId = video.Id
+		}
+		if err := tx.Model(&model.Segment{}).Create(segments).Error; err != nil {
+			return apperr.NewAppErr("video.create.error", "Failed to create video segments").WithCause(err)
+		}
+		return nil
+	})
 	if err != nil {
-		return apperr.NewAppErr("video.create.error", "Failed to create video").WithCause(err)
+		return apperr.NewAppErr("video.create.error", "Failed to create video with segments").WithCause(err)
 	}
+
 	return nil
+}
+
+func (r *VideoRepository) IncrementViewCount(ctx context.Context, videoId string) error {
+	return r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoId).UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error
 }
 
 func (r *VideoRepository) GetById(ctx context.Context, id, userId string) (*model.VideoDetail, error) {
@@ -49,6 +68,16 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 		countQuery = countQuery.Where(ftSearch, tsquery)
 		query = query.Where(ftSearch, tsquery)
 	}
+	if filter.Category != nil && *filter.Category != "" {
+		jsonVal, err := json.Marshal([]string{*filter.Category})
+		if err != nil {
+			return nil, 0, apperr.NewAppErr("filter.encode.error", "Failed to encode category").WithCause(err)
+		}
+
+		categoryFilter := gorm.Expr("categories @> ?", string(jsonVal))
+		countQuery = countQuery.Where(categoryFilter)
+		query = query.Where(categoryFilter)
+	}
 
 	// Count total with filter
 	err := countQuery.Count(&total).Error
@@ -56,7 +85,14 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to count videos").WithCause(err)
 	}
 
-	// Fetch paginated data with filter
+	if filter.Type != "" {
+		switch filter.Type {
+		case model.VideoPopular:
+			query = query.Order("view_count DESC")
+		default:
+			logger.Warnf("Unknown video type filter: %s", filter.Type)
+		}
+	}
 	err = query.Order("created_at DESC").
 		Offset(filter.Pagination.Offset()).
 		Limit(filter.Pagination.Limit()).
@@ -66,6 +102,15 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 	}
 
 	return videos, total, nil
+}
+
+func (r *VideoRepository) DistinctCategories(ctx context.Context) ([]string, error) {
+	var categories []string
+	err := r.db.WithContext(ctx).Raw(`SELECT DISTINCT jsonb_array_elements_text(categories) FROM videos WHERE jsonb_typeof(categories) = 'array'`).Pluck("jsonb_array_elements_text", &categories).Error
+	if err != nil {
+		return nil, apperr.NewAppErr("video.categories.error", "Failed to get distinct video categories").WithCause(err)
+	}
+	return categories, nil
 }
 
 func (r *VideoRepository) Update(ctx context.Context, video *model.Video) error {

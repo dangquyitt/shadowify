@@ -24,6 +24,7 @@ func (h *VideoHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMid
 	v.POST("", h.Create)
 	v.GET("/:id", h.GetByID, auth.Authenticate)
 	v.GET("", h.List)
+	v.GET("/categories", h.Categories)
 	v.GET("/favorites", h.GetFavoriteVideos, auth.Authenticate)
 }
 
@@ -84,4 +85,13 @@ func (h *VideoHandler) List(c echo.Context) error {
 		return response.WriteError(c, err)
 	}
 	return response.SuccessWithPagination(c, videos, filter.Pagination.WithTotal(total))
+}
+
+func (h *VideoHandler) Categories(c echo.Context) error {
+	ctx := c.Request().Context()
+	categories, err := h.service.Categories(ctx)
+	if err != nil {
+		return response.WriteError(c, err)
+	}
+	return response.Success(c, categories)
 }
