@@ -14,8 +14,9 @@ const (
 )
 
 type VideoFilter struct {
-	Q *string `json:"q" query:"q"`
 	pagination.Pagination
+
+	Q        *string   `json:"q" query:"q"`
 	Type     VideoType `json:"type" query:"type"` // "popular", "recent", "favorite"
 	Category *string   `json:"category" query:"category"`
 }

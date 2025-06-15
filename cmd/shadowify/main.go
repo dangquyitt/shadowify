@@ -40,8 +40,6 @@ func main() {
 		stdlog.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	segmentRepo := repository.NewSegmentRepository(db)
-
 	// Setup service dependencies (use nil for repository and grpc client for now)
 	whisperService := service.NewWhisperService()
 	ytDLPService := service.NewYTDLPService()
@@ -49,13 +47,15 @@ func main() {
 	segmentRepository := repository.NewSegmentRepository(db)
 	languageRepository := repository.NewLanguageRepository(db)
 	favoriteRepository := repository.NewFavoriteRepository(db)
+	wordRepository := repository.NewWordRepository(db)
 
 	// Initialize services
-	videoService := service.NewVideoService(videoRepository, segmentRepo, whisperService, ytDLPService)
+	videoService := service.NewVideoService(videoRepository, segmentRepository, whisperService, ytDLPService)
 	segmentService := service.NewSegmentService(segmentRepository)
 	sttService := service.NewSTTService(whisperService)
 	translatorService := service.NewTranslatorService(cfg.Azure.Translator)
 	favoriteService := service.NewFavoriteService(favoriteRepository)
+	wordService := service.NewWordService(wordRepository, translatorService)
 
 	// Setup handlers
 	videoHandler := handler.NewVideoHandler(videoService)
@@ -65,6 +65,7 @@ func main() {
 	sttHandler := handler.NewSTTHandler(sttService)
 	translatorHandler := handler.NewTranslatorHandler(translatorService)
 	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
+	wordHandler := handler.NewWordHandler(wordService)
 
 	keycloakMiddleware, err := middleware.NewKeycloakMiddleware(context.Background(), cfg.Keycloak)
 	if err != nil {
@@ -80,6 +81,7 @@ func main() {
 	sttHandler.RegisterRoutes(e)
 	translatorHandler.RegisterRoutes(e)
 	favoriteHandler.RegisterRoutes(e, keycloakMiddleware)
+	wordHandler.RegisterRoutes(e, keycloakMiddleware)
 
 	e.Start(":" + cfg.HTTP.Port)
 

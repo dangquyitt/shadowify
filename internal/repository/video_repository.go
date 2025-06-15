@@ -57,7 +57,6 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 	var total int64
 
 	// Base queries for count and data selection
-	countQuery := r.db.WithContext(ctx).Model(&model.Video{})
 	query := r.db.WithContext(ctx).Model(&model.Video{})
 
 	// Apply full-text search filter if provided
@@ -65,7 +64,6 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 		tsquery := gorm.Expr("to_tsquery('simple', ?)", ftsearch.BuildTsqueryExpression(*filter.Q, ftsearch.WithPrefixMatching()))
 		// Search across title, full_title, and description
 		ftSearch := "to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(full_title,'') || ' ' || coalesce(description,'')) @@ ?"
-		countQuery = countQuery.Where(ftSearch, tsquery)
 		query = query.Where(ftSearch, tsquery)
 	}
 	if filter.Category != nil && *filter.Category != "" {
@@ -75,12 +73,11 @@ func (r *VideoRepository) List(ctx context.Context, filter *model.VideoFilter) (
 		}
 
 		categoryFilter := gorm.Expr("categories @> ?", string(jsonVal))
-		countQuery = countQuery.Where(categoryFilter)
 		query = query.Where(categoryFilter)
 	}
 
 	// Count total with filter
-	err := countQuery.Count(&total).Error
+	err := query.Count(&total).Error
 	if err != nil {
 		return nil, 0, apperr.NewAppErr("video.list.error", "Failed to count videos").WithCause(err)
 	}

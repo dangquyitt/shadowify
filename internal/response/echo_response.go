@@ -31,6 +31,10 @@ func WriteError(c echo.Context, err error) error {
 		return c.NoContent(http.StatusNoContent)
 	}
 	if appErr, ok := err.(*apperr.AppErr); ok {
+		if appErr.Unwrap() == nil {
+			logger.Errorf("error: %s", appErr.Error())
+			return c.JSON(AppErrCodeToStatus(appErr.Code), NewErrorResponse(appErr))
+		}
 		logger.Errorf("error: %s, cause: %s", appErr.Error(), appErr.Unwrap().Error())
 		return c.JSON(AppErrCodeToStatus(appErr.Code), NewErrorResponse(appErr))
 	}
