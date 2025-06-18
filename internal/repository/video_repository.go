@@ -140,3 +140,17 @@ func (r *VideoRepository) FindFavoriteVideos(ctx context.Context, userId string,
 	}
 	return videos, total, nil
 }
+
+func (c *VideoRepository) GetByYoutubeId(ctx context.Context, youtubeId string) (*model.Video, error) {
+	var video model.Video
+	err := c.db.WithContext(ctx).Model(&model.Video{}).
+		Where("youtube_id = ?", youtubeId).
+		First(&video).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // No video found with this YouTube ID
+		}
+		return nil, apperr.NewAppErr("video.get_by_youtube_id.error", "Failed to get video by YouTube ID").WithCause(err)
+	}
+	return &video, nil
+}

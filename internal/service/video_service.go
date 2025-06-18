@@ -64,6 +64,15 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 	if err != nil {
 		return nil, err
 	}
+
+	yt, err := s.repo.GetByYoutubeId(ctx, youtubeId)
+	if err != nil {
+		return nil, apperr.NewAppErr("video.create.error", "Failed to check existing video").WithCause(err)
+	}
+	if yt != nil {
+		return nil, apperr.NewAppErr("video.create.error", "Video already exists").WithCause(err)
+	}
+
 	logger.Infof("Starting download and extraction for YouTube ID: %s", youtubeId)
 	metadata, filePath, err := s.ytDLPService.DownloadAndExtract(ctx, youtubeId)
 	defer func() {
@@ -75,6 +84,11 @@ func (s *VideoService) Create(ctx context.Context, req *dto.CreateVideoRequest) 
 	}()
 	if err != nil {
 		return nil, apperr.NewAppErr("video.create.error", "Failed to download and extract video").WithCause(err)
+	}
+
+	lang, err := s.whisperService.DetectLanguage(ctx, filePath)
+	if lang != "en" {
+		return nil, apperr.NewAppErr("video.create.error", "Only English videos are supported").WithCause(err)
 	}
 
 	video := &model.Video{
