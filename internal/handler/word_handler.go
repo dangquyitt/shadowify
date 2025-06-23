@@ -18,11 +18,11 @@ func NewWordHandler(wordService *service.WordService) *WordHandler {
 	return &WordHandler{wordService: wordService}
 }
 
-func (h *WordHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMiddleware) {
+func (h *WordHandler) RegisterRoutes(e *echo.Echo, device *middleware.Device) {
 	words := e.Group("/words")
-	words.POST("", h.Create, auth.Authenticate)
-	words.GET("", h.List, auth.Authenticate)
-	words.DELETE("/:word", h.Delete, auth.Authenticate)
+	words.POST("", h.Create, device.Authenticate)
+	words.GET("", h.List, device.Authenticate)
+	words.DELETE("/:word", h.Delete, device.Authenticate)
 }
 
 func (h *WordHandler) Create(c echo.Context) error {

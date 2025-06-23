@@ -19,13 +19,13 @@ func NewVideoHandler(s *service.VideoService) *VideoHandler {
 	return &VideoHandler{service: s}
 }
 
-func (h *VideoHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMiddleware) {
+func (h *VideoHandler) RegisterRoutes(e *echo.Echo, device *middleware.Device) {
 	v := e.Group("/videos")
 	v.POST("", h.Create)
-	v.GET("/:id", h.GetByID, auth.Authenticate)
+	v.GET("/:id", h.GetByID, device.Authenticate)
 	v.GET("", h.List)
 	v.GET("/categories", h.Categories)
-	v.GET("/favorites", h.GetFavoriteVideos, auth.Authenticate)
+	v.GET("/favorites", h.GetFavoriteVideos, device.Authenticate)
 }
 
 func (h *VideoHandler) GetFavoriteVideos(c echo.Context) error {

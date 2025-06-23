@@ -20,9 +20,9 @@ func NewFavoriteHandler(favoriteService *service.FavoriteService) *FavoriteHandl
 	}
 }
 
-func (h *FavoriteHandler) RegisterRoutes(e *echo.Echo, auth *middleware.KeycloakMiddleware) {
+func (h *FavoriteHandler) RegisterRoutes(e *echo.Echo, device *middleware.Device) {
 	favorites := e.Group("/favorites")
-	favorites.Use(auth.Authenticate)
+	favorites.Use(device.Authenticate)
 	favorites.POST("/:video_id", h.Create)
 	favorites.DELETE("/:video_id", h.Delete)
 }

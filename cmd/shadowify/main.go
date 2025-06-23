@@ -67,21 +67,19 @@ func main() {
 	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
 	wordHandler := handler.NewWordHandler(wordService)
 
-	keycloakMiddleware, err := middleware.NewKeycloakMiddleware(context.Background(), cfg.Keycloak)
-	if err != nil {
-		stdlog.Fatalf("Failed to initialize Keycloak middleware: %v", err)
-	}
+	deviceMiddleware := middleware.NewDevice()
 
 	e := echo.New()
+	e.Use(deviceMiddleware.Authenticate)
 	e.Use(_echomiddleware.CORS())
 	e.Use(_echomiddleware.Recover())
-	videoHandler.RegisterRoutes(e, keycloakMiddleware)
+	videoHandler.RegisterRoutes(e, deviceMiddleware)
 	segmentHandler.RegisterRoutes(e)
 	languageHandler.RegisterRoutes(e)
 	sttHandler.RegisterRoutes(e)
 	translatorHandler.RegisterRoutes(e)
-	favoriteHandler.RegisterRoutes(e, keycloakMiddleware)
-	wordHandler.RegisterRoutes(e, keycloakMiddleware)
+	favoriteHandler.RegisterRoutes(e, deviceMiddleware)
+	wordHandler.RegisterRoutes(e, deviceMiddleware)
 
 	e.Start(":" + cfg.HTTP.Port)
 
