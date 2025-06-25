@@ -19,6 +19,18 @@ func NewWordService(wordRepository *repository.WordRepository, translatorService
 	}
 }
 
+func (s *WordService) GetByWord(ctx context.Context, word string, userId string) (*model.Word, error) {
+	if word == "" {
+		return nil, apperr.NewAppErr("bad_request", "Word is required")
+	}
+
+	if userId == "" {
+		return nil, apperr.NewAppErr("bad_request", "User ID is required")
+	}
+
+	return s.wordRepository.FindByWord(ctx, word, userId)
+}
+
 func (s *WordService) List(ctx context.Context, filter *model.WordFilter) ([]*model.Word, int64, error) {
 	return s.wordRepository.List(ctx, filter)
 }

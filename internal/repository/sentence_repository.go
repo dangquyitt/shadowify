@@ -29,7 +29,7 @@ func (r *SentenceRepository) List(ctx context.Context, filter *model.SentenceFil
 
 	if filter.Q != nil && *filter.Q != "" {
 		tsquery := gorm.Expr("to_tsquery('simple', ?)", ftsearch.BuildTsqueryExpression(*filter.Q, ftsearch.WithPrefixMatching()))
-		ftSearch := "to_tsvector('simple', coalesce(text,'')) @@ ?"
+		ftSearch := "to_tsvector('simple', coalesce(meaning_en,'') || ' ' || coalesce(meaning_vi,'')) @@ ?"
 		query = query.Where(ftSearch, tsquery)
 	}
 
@@ -43,4 +43,20 @@ func (r *SentenceRepository) List(ctx context.Context, filter *model.SentenceFil
 	}
 
 	return sentences, total, nil
+}
+
+func (r *SentenceRepository) FindByUserIdAndSegmentId(ctx context.Context, userId string, segmentId string) (*model.Sentence, error) {
+	var sentence model.Sentence
+	err := r.db.WithContext(ctx).Where("user_id = ? AND segment_id = ?", userId, segmentId).First(&sentence).Error
+	if err != nil {
+		return nil, apperr.NewAppErr("sentence.find.error", "Failed to find sentence").WithCause(err)
+	}
+	return &sentence, nil
+}
+
+func (r SentenceRepository) DeleteByUserIdAndSegmentId(ctx context.Context, userId string, segmentId string) error {
+	if err := r.db.WithContext(ctx).Where("user_id = ? AND segment_id = ?", userId, segmentId).Delete(&model.Sentence{}).Error; err != nil {
+		return apperr.NewAppErr("sentence.delete.error", "Failed to delete sentence").WithCause(err)
+	}
+	return nil
 }

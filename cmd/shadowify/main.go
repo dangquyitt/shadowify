@@ -48,6 +48,7 @@ func main() {
 	languageRepository := repository.NewLanguageRepository(db)
 	favoriteRepository := repository.NewFavoriteRepository(db)
 	wordRepository := repository.NewWordRepository(db)
+	sentenceRepository := repository.NewSentenceRepository(db)
 
 	// Initialize services
 	videoService := service.NewVideoService(videoRepository, segmentRepository, whisperService, ytDLPService)
@@ -56,6 +57,7 @@ func main() {
 	translatorService := service.NewTranslatorService(cfg.Azure.Translator)
 	favoriteService := service.NewFavoriteService(favoriteRepository)
 	wordService := service.NewWordService(wordRepository, translatorService)
+	sentenceService := service.NewSentenceService(sentenceRepository, translatorService)
 
 	// Setup handlers
 	videoHandler := handler.NewVideoHandler(videoService)
@@ -66,6 +68,7 @@ func main() {
 	translatorHandler := handler.NewTranslatorHandler(translatorService)
 	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
 	wordHandler := handler.NewWordHandler(wordService)
+	sentenceHandler := handler.NewSentenceHandler(sentenceService)
 
 	deviceMiddleware := middleware.NewDevice()
 
@@ -80,6 +83,7 @@ func main() {
 	translatorHandler.RegisterRoutes(e)
 	favoriteHandler.RegisterRoutes(e, deviceMiddleware)
 	wordHandler.RegisterRoutes(e, deviceMiddleware)
+	sentenceHandler.RegisterRoutes(e, deviceMiddleware)
 
 	e.Start(":" + cfg.HTTP.Port)
 

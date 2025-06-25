@@ -23,6 +23,26 @@ func (h *WordHandler) RegisterRoutes(e *echo.Echo, device *middleware.Device) {
 	words.POST("", h.Create, device.Authenticate)
 	words.GET("", h.List, device.Authenticate)
 	words.DELETE("/:word", h.Delete, device.Authenticate)
+	words.GET("/:word", h.GetByWord, device.Authenticate)
+}
+
+func (h *WordHandler) GetByWord(c echo.Context) error {
+	ctx := c.Request().Context()
+	user, ok := model.FromContext(ctx)
+	if !ok {
+		return response.WriteError(c, apperr.NewAppErr("unauthorized", "User not authenticated"))
+	}
+	word := c.Param("word")
+
+	result, err := h.wordService.GetByWord(ctx, word, user.Id)
+	if err != nil {
+		return response.WriteError(c, err)
+	}
+	if result == nil {
+		return response.WriteError(c, apperr.NewAppErr("not_found", "Word not found"))
+	}
+
+	return response.Success(c, result)
 }
 
 func (h *WordHandler) Create(c echo.Context) error {

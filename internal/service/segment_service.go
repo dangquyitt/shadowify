@@ -18,3 +18,7 @@ func NewSegmentService(repo *repository.SegmentRepository) *SegmentService {
 func (s *SegmentService) GetSegmentsByVideoID(ctx context.Context, videoID string) ([]*model.Segment, error) {
 	return s.repo.FindByVideoID(ctx, videoID)
 }
+
+func (s *SegmentService) GetSegmentByID(ctx context.Context, id string) (*model.Segment, error) {
+	return s.repo.FindById(ctx, id)
+}

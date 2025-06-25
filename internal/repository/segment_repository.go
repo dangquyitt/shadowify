@@ -27,3 +27,12 @@ func (r *SegmentRepository) FindByVideoID(ctx context.Context, videoID string) (
 	}
 	return segments, nil
 }
+
+func (r *SegmentRepository) FindById(ctx context.Context, id string) (*model.Segment, error) {
+	var segment model.Segment
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&segment).Error
+	if err != nil {
+		return nil, err
+	}
+	return &segment, nil
+}

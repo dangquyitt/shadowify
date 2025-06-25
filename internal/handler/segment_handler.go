@@ -46,4 +46,22 @@ func (h *SegmentHandler) GetSegmentsByVideoID(c echo.Context) error {
 // RegisterRoutes registers the segment routes to the provided Echo instance
 func (h *SegmentHandler) RegisterRoutes(e *echo.Echo) {
 	e.GET("/videos/:video_id/segments", h.GetSegmentsByVideoID)
+	e.GET("/segments/:segment_id", h.GetSegmentByID)
+}
+
+func (h *SegmentHandler) GetSegmentByID(c echo.Context) error {
+	segmentID := c.Param("segment_id")
+	if segmentID == "" {
+		return response.WriteError(c, apperr.NewAppErr("segment.invalid_segment_id", "segment_id is required"))
+	}
+
+	segment, err := h.segmentService.GetSegmentByID(c.Request().Context(), segmentID)
+	if err != nil {
+		return response.WriteError(c, err)
+	}
+	if segment == nil {
+		return response.WriteError(c, apperr.NewAppErr("segment.not_found", "Segment not found"))
+	}
+
+	return response.Success(c, segment)
 }
