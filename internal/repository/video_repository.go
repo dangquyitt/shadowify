@@ -126,6 +126,13 @@ func (r *VideoRepository) FindFavoriteVideos(ctx context.Context, userId string,
 		Where("favorites.user_id = ?", userId).
 		Order("favorites.created_at DESC")
 
+	if filter.Q != nil && *filter.Q != "" {
+		tsquery := gorm.Expr("to_tsquery('simple', ?)", ftsearch.BuildTsqueryExpression(*filter.Q, ftsearch.WithPrefixMatching()))
+		// Search across title, full_title, and description
+		ftSearch := "to_tsvector('simple', coalesce(videos.title,'') || ' ' || coalesce(videos.full_title,'') || ' ' || coalesce(videos.description,'')) @@ ?"
+		query = query.Where(ftSearch, tsquery)
+	}
+
 	var total int64
 	err := query.Count(&total).Error
 	if err != nil {

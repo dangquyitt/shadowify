@@ -22,6 +22,7 @@ type VideoFilter struct {
 }
 
 type FavoriteVideoFilter struct {
+	Q *string `json:"q" query:"q"`
 	pagination.Pagination
 }
 
