@@ -35,4 +35,5 @@ tmp
 
 whisper.cpp
 
-CEFR-SP
+cefrmodel
+cefrapi

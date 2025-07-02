@@ -67,7 +67,8 @@ func (s *WhisperService) Transcribe(ctx context.Context, audioFilePath string) (
 		"-t", fmt.Sprintf("%d", runtime.NumCPU()-2),
 		"-oj",
 		"-sow",
-		"-wt", "0.1",
+		"-ml", "500",
+		"-wt", "0.05",
 	)
 
 	if err := cmd.Run(); err != nil {

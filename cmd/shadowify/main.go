@@ -53,8 +53,8 @@ func main() {
 	// Initialize services
 	videoService := service.NewVideoService(videoRepository, segmentRepository, whisperService, ytDLPService)
 	segmentService := service.NewSegmentService(segmentRepository)
-	sttService := service.NewSTTService(whisperService)
 	translatorService := service.NewTranslatorService(cfg.Azure.Translator)
+	sttService := service.NewSTTService(whisperService, translatorService)
 	favoriteService := service.NewFavoriteService(favoriteRepository)
 	wordService := service.NewWordService(wordRepository, translatorService)
 	sentenceService := service.NewSentenceService(sentenceRepository, translatorService)

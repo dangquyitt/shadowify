@@ -22,6 +22,21 @@ func NewSTTHandler(sttService *service.STTService) *STTHandler {
 func (h *STTHandler) RegisterRoutes(e *echo.Echo) {
 	stt := e.Group("/stt")
 	stt.POST("/transcribe", h.TranscribeAudio)
+	stt.POST("/evaluate", h.EvaluateAudio)
+}
+
+func (h *STTHandler) EvaluateAudio(c echo.Context) error {
+	var request model.EvaluateInput
+	if err := c.Bind(&request); err != nil {
+		return response.WriteError(c, apperr.NewAppErr("bad_request", "invalid filter parameters"))
+	}
+
+	output, err := h.sttService.EvaluateAudio(c.Request().Context(), &request)
+	if err != nil {
+		return response.WriteError(c, apperr.NewAppErr("internal_error", "failed to evaluate audio").WithCause(err))
+	}
+
+	return response.Success(c, output)
 }
 
 func (h *STTHandler) TranscribeAudio(c echo.Context) error {
